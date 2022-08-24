@@ -1,5 +1,5 @@
 CREATE TABLE ACCESS_SQL AS 
-SELECT c.*, 
+SELECT c.*, APPT_DATE_YEAR - DAYS_SUBTRACT AS APPT_WEEK,
 CASE WHEN c.Appt_Source_New_place is NULL
     THEN
         CASE INSTR(c.APPT_SOURCE, 'MYCHART') WHEN 0
@@ -21,7 +21,7 @@ CASE WHEN c.Appt_Source_New_place is NULL
         c.Appt_Source_New_place
 END AS Appt_Source_New
 FROM(
-SELECT d.*, b.holiday
+SELECT d.*, b.holiday, f.DAYS_SUBTRACT
 FROM(
     SELECT a.DEP_RPT_GRP_SEVENTEEN AS Campus, a.DEPT_SPECIALTY_NAME AS Campus_Specialty, a.DEPARTMENT_NAME AS Department, a.PROV_NAME_WID, a.DEPARTMENT_ID AS Department_ID, a.REFERRING_PROV_NAME_WID AS Refferring_Provider,
                          a.MRN, a.PAT_NAME AS Patient_Name, a.ZIP_CODE, a.BIRTH_DATE, a.FINCLASS AS Coverage,
@@ -57,10 +57,12 @@ FROM(
                          REGEXP_SUBSTR(a.LOS_NAME, 'NEW') AS NEW_PT3
 FROM MV_DM_PATIENT_ACCESS a
     WHERE a.CONTACT_DATE BETWEEN TO_DATE('2022-04-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
-                    AND TO_DATE('2022-07-07 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+                    AND TO_DATE(trunc(current_date) - (1/86400), 'YYYY-MM-DD HH24:MI:SS')
                          OR a.APPT_MADE_DTTM BETWEEN TO_DATE('2022-04-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
-                    AND TO_DATE('2022-07-07 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+                    AND TO_DATE(trunc(current_date) - (1/86400), 'YYYY-MM-DD HH24:MI:SS')
                 ) d
                 LEFT JOIN holidays b on d.Appt_Date_Year = b.dates
+                LEFT JOIN SUBTRACT_DAYS f on d.APPT_DAY = f.WEEKDAY
                 ) c
+                
                 
