@@ -1,5 +1,6 @@
 CREATE View AMBULATORY_ACCESS AS 
 SELECT c.*, APPT_DATE_YEAR - DAYS_SUBTRACT AS APPT_WEEK,
+--SELECT /*+ PARALLEL(4) */ c.*, APPT_DATE_YEAR - DAYS_SUBTRACT AS APPT_WEEK,
 CASE WHEN c.Appt_Source_New_place is NULL
     THEN
         CASE INSTR(c.APPT_SOURCE, 'MYCHART') WHEN 0
@@ -36,6 +37,7 @@ FROM(
                          a.PRIMARY_DX_CODE, a.ENC_CLOSED_CHARGE_STATUS, a.Y_ENC_COSIGN_TIME, a.Y_ENC_CLOSE_TIME, a.Y_ENC_OPEN_TIME, a.NPI, a.VISIT_GROUP_NUM AS NEW_PT, 
                          a.PAT_ENC_CSN_ID, a.VISITPLAN, a.ATTRIB_BILL_AREA,
                          EXTRACT(year from a.APPT_DTTM) Appt_Year,
+                         CONCAT(TO_CHAR(a.APPT_DTTM, 'HH24'), ':00') APPT_TM_HR,
                          TO_CHAR(a.APPT_DTTM, 'MON') AS Appt_Month,
                          TO_CHAR(a.APPT_DTTM, 'yyyy-mm') AS Appt_Month_Year,
                          --TO_CHAR(trunc(TO_DATE(a.APPT_DTTM, 'yyyy-mm-dd HH24:MI:SS'))) AS Appt_Date_Year,
@@ -53,16 +55,19 @@ FROM(
                          (a.APPT_DTTM - a.APPT_CANC_DTTM) AS Lead_Days,
                          TRIM( ',' FROM a.DEPARTMENT_NAME||','||a.PROV_NAME_WID||','||a.MRN||','||a.APPT_DTTM ) AS uniqueID,
                          TO_CHAR(a.APPT_DTTM, 'DY') AS APPT_DAY,
-                         CASE WHEN a.VISIT_GROUP_NUM = 4 THEN 'New' ELSE 'Established' END AS NEW_PT2,
+                         CASE WHEN a.VISIT_GROUP_NUM = 4 THEN 'NEW' ELSE 'ESTABLISHED' END AS NEW_PT2,
                          REGEXP_SUBSTR(a.LOS_NAME, 'NEW') AS NEW_PT3
 FROM MV_DM_PATIENT_ACCESS a
     WHERE a.CONTACT_DATE BETWEEN TO_DATE('2021-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
-                    AND TO_DATE(trunc(current_date) - (1/86400), 'YYYY-MM-DD HH24:MI:SS')
+                    AND TO_DATE('2022-08-25 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
                          OR a.APPT_MADE_DTTM BETWEEN TO_DATE('2021-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
-                    AND TO_DATE(trunc(current_date) - (1/86400), 'YYYY-MM-DD HH24:MI:SS')
+                    AND TO_DATE('2022-08-25 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
                 ) d
                 LEFT JOIN holidays b on d.Appt_Date_Year = b.dates
                 LEFT JOIN SUBTRACT_DAYS f on d.APPT_DAY = f.WEEKDAY
                 ) c
                 
+                DROP VIEW AMBULATORY_ACCESS
+                
+               
                 
