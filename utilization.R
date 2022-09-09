@@ -1,12 +1,30 @@
 scheduled_data_query <- glue("SELECT CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER,
                               VISIT_METHOD, APPT_TYPE, APPT_STATUS, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_DTTM, APPT_DUR,
-                                      APPT_YEAR, APPT_WEEK, APPT_DAY, APPT_TM_HR, HOLIDAY
+                                      APPT_YEAR, APPT_WEEK, APPT_DAY, APPT_TM_HR, HOLIDAY, NPI
                                FROM AMBULATORY_ACCESS  where APPT_STATUS= 'Arrived' and APPT_DTTM >= add_months(sysdate, -2)")
 
 conn <- dbConnect(drv = odbc(), "OAO Cloud DB", timeout = 30)
 scheduled.data <- dbGetQuery(conn, scheduled_data_query)
 dbDisconnect(conn)
 
+scheduled.data <- scheduled.data %>% rename(Campus = CAMPUS,
+                                            Campus.Specialty = CAMPUS_SPECIALTY,
+                                            Department = DEPARTMENT,
+                                            Resource = RESOURCES,
+                                            Provider = PROVIDER,
+                                            Visit.Method = VISIT_METHOD,
+                                            Appt.Type = APPT_TYPE,
+                                            Appt.Status = APPT_STATUS,
+                                            Appt.DateYear = APPT_DATE_YEAR,
+                                            Appt.MonthYear = APPT_MONTH_YEAR,
+                                            Appt.Year = APPT_YEAR,
+                                            Appt.Dur = APPT_DUR,
+                                            Appt.DTTM = APPT_DTTM,
+                                            Appt.Week = APPT_WEEK,
+                                            Appt.Day = APPT_DAY,
+                                            Appt.TM.Hr = APPT_TM_HR,
+                                            HOLIDAY = holiday
+                                            )
 
 # Function for formatting date and time by hour
 system_date <- function(time){
@@ -40,13 +58,6 @@ data.hour.scheduled$Appt.End.Time <- as.POSIXct(paste0(Sys.Date()," ", format(da
 data.hour.scheduled$time.interval <- interval(data.hour.scheduled$Appt.Start.Time, data.hour.scheduled$Appt.End.Time)
 
 # Excluding visits without Roomin or Visit End Tines
-data.hour.scheduled$`00:00` <- util.function("00:00:00", data.hour.scheduled)
-data.hour.scheduled$`01:00` <- util.function("01:00:00", data.hour.scheduled)
-data.hour.scheduled$`02:00` <- util.function("02:00:00", data.hour.scheduled)
-data.hour.scheduled$`03:00` <- util.function("03:00:00", data.hour.scheduled)
-data.hour.scheduled$`04:00` <- util.function("04:00:00", data.hour.scheduled)
-data.hour.scheduled$`05:00` <- util.function("05:00:00", data.hour.scheduled)
-data.hour.scheduled$`06:00` <- util.function("06:00:00", data.hour.scheduled)
 data.hour.scheduled$`07:00` <- util.function("07:00:00", data.hour.scheduled)
 data.hour.scheduled$`08:00` <- util.function("08:00:00", data.hour.scheduled)
 data.hour.scheduled$`09:00` <- util.function("09:00:00", data.hour.scheduled)
@@ -61,13 +72,10 @@ data.hour.scheduled$`17:00` <- util.function("17:00:00", data.hour.scheduled)
 data.hour.scheduled$`18:00` <- util.function("18:00:00", data.hour.scheduled)
 data.hour.scheduled$`19:00` <- util.function("19:00:00", data.hour.scheduled)
 data.hour.scheduled$`20:00` <- util.function("20:00:00", data.hour.scheduled)
-data.hour.scheduled$`21:00` <- util.function("21:00:00", data.hour.scheduled)
-data.hour.scheduled$`22:00` <- util.function("22:00:00", data.hour.scheduled)
-data.hour.scheduled$`23:00` <- util.function("23:00:00", data.hour.scheduled)
 
 # Data Validation
 # colnames(data.hour.scheduled[89])
-data.hour.scheduled$sum <- rowSums(data.hour.scheduled[,which(colnames(data.hour.scheduled)=="00:00"):which(colnames(data.hour.scheduled)=="23:00")])
+data.hour.scheduled$sum <- rowSums(data.hour.scheduled[,which(colnames(data.hour.scheduled)=="07:00"):which(colnames(data.hour.scheduled)=="20:00")])
 # data.hour.scheduled$sum <- rowSums(data.hour.scheduled [,66:89])
 data.hour.scheduled$actual <- as.numeric(difftime(data.hour.scheduled$Appt.End.Time, data.hour.scheduled$Appt.Start.Time, units = "mins"))
 data.hour.scheduled$comparison <- ifelse(data.hour.scheduled$sum ==data.hour.scheduled$actual, 0, 1)
@@ -90,14 +98,7 @@ data.hour.arrived.all$Appt.End.Time <- data.hour.arrived.all$Appt.End
 data.hour.arrived.all$time.interval <- interval(data.hour.arrived.all$Appt.Start.Time, data.hour.arrived.all$Appt.End.Time)
 
 data.hour.arrived <- data.hour.arrived.all
-# Excluding visits without Roomin or Visit End Tines
-data.hour.arrived$`00:00` <- util.function("00:00:00", data.hour.arrived)
-data.hour.arrived$`01:00` <- util.function("01:00:00", data.hour.arrived)
-data.hour.arrived$`02:00` <- util.function("02:00:00", data.hour.arrived)
-data.hour.arrived$`03:00` <- util.function("03:00:00", data.hour.arrived)
-data.hour.arrived$`04:00` <- util.function("04:00:00", data.hour.arrived)
-data.hour.arrived$`05:00` <- util.function("05:00:00", data.hour.arrived)
-data.hour.arrived$`06:00` <- util.function("06:00:00", data.hour.arrived)
+# Excluding visits without Roomin or Visit End Tines)
 data.hour.arrived$`07:00` <- util.function("07:00:00", data.hour.arrived)
 data.hour.arrived$`08:00` <- util.function("08:00:00", data.hour.arrived)
 data.hour.arrived$`09:00` <- util.function("09:00:00", data.hour.arrived)
@@ -112,13 +113,10 @@ data.hour.arrived$`17:00` <- util.function("17:00:00", data.hour.arrived)
 data.hour.arrived$`18:00` <- util.function("18:00:00", data.hour.arrived)
 data.hour.arrived$`19:00` <- util.function("19:00:00", data.hour.arrived)
 data.hour.arrived$`20:00` <- util.function("20:00:00", data.hour.arrived)
-data.hour.arrived$`21:00` <- util.function("21:00:00", data.hour.arrived)
-data.hour.arrived$`22:00` <- util.function("22:00:00", data.hour.arrived)
-data.hour.arrived$`23:00` <- util.function("23:00:00", data.hour.arrived)
 
 # Data Validation
 # colnames(data.hour.arrived[89])
-data.hour.arrived$sum <- rowSums(data.hour.arrived[,which(colnames(data.hour.arrived)=="00:00"):which(colnames(data.hour.arrived)=="23:00")])
+data.hour.arrived$sum <- rowSums(data.hour.arrived[,which(colnames(data.hour.arrived)=="07:00"):which(colnames(data.hour.arrived)=="20:00")])
 data.hour.arrived$actual <- as.numeric(difftime(data.hour.arrived$Appt.End.Time, data.hour.arrived$Appt.Start.Time, units = "mins"))
 data.hour.arrived$comparison <- ifelse(data.hour.arrived$sum == data.hour.arrived$actual, 0, 1)
 data.hour.arrived$comparison[is.na(data.hour.arrived$comparison)] <- "No Data"
