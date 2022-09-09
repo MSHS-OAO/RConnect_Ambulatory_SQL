@@ -11,9 +11,6 @@ library(tidyverse)
 library(DBI)
 library(pool)
 
-
-conn <- dbPool(drv = odbc::odbc(), dsn = "OAO Cloud DB", timeout = 30)
-
 drop_access_query <- glue("DROP VIEW AMBULATORY_ACCESS")
 
 date_1 <- "2021-01-01"
@@ -153,6 +150,7 @@ WHERE g.ZIP_CODE_LAYER_A is NOT NULL")
 
 
   tryCatch({
+        conn <- dbConnect(drv = odbc(), "OAO Cloud DB", timeout = 30)
         dbBegin(conn)
         dbExecute(conn, drop_access_query)
         dbExecute(conn, access_query)
