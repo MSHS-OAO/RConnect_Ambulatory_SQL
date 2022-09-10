@@ -23,7 +23,7 @@ scheduled.data <- scheduled.data %>% rename(Campus = CAMPUS,
                                             Appt.Week = APPT_WEEK,
                                             Appt.Day = APPT_DAY,
                                             Appt.TM.Hr = APPT_TM_HR,
-                                            HOLIDAY = holiday
+                                            holiday = HOLIDAY
                                             )
 
 # Function for formatting date and time by hour
