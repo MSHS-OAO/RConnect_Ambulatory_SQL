@@ -71,6 +71,9 @@ FROM(
                 ) i")
 
 
+drop_ambulatory_filters_query <- glue("DROP TABLE AMBULATORY_FILTERS")
+ambulatory_filters_query <- glue("CREATE TABLE AMBULATORY_FILTERS AS
+SELECT DISTINCT CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, PROVIDER, RESOURCES, VISIT_METHOD, APPT_TYPE FROM AMBULATORY_ACCESS")
 
 drop_slot_query <- glue("DROP VIEW AMBULATORY_SLOT")
 slot_query <- glue("CREATE VIEW AMBULATORY_SLOT AS
@@ -155,6 +158,9 @@ WHERE g.ZIP_CODE_LAYER_A is NOT NULL")
         dbBegin(conn)
         dbExecute(conn, drop_access_query)
         dbExecute(conn, access_query)
+        
+        dbExecute(conn, drop_ambulatory_filters_query)
+        dbExecute(conn, ambulatory_filters_query)
         
         dbExecute(conn, drop_slot_query)
         dbExecute(conn, slot_query)
