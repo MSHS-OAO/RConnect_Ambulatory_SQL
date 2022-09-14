@@ -41,6 +41,7 @@ FROM(
                              CONCAT(TO_CHAR(a.APPT_DTTM, 'HH24'), ':00') APPT_TM_HR,
                              TO_CHAR(a.APPT_DTTM, 'MON') AS Appt_Month,
                              TO_CHAR(a.APPT_DTTM, 'yyyy-mm') AS Appt_Month_Year,
+                             TO_CHAR(a.APPT_MADE_DTTM, 'yyyy-mm') AS Appt_Made_Month_Year,
                              --TO_CHAR(trunc(TO_DATE(a.APPT_DTTM, 'yyyy-mm-dd HH24:MI:SS'))) AS Appt_Date_Year,
                              trunc(a.APPT_DTTM) AS Appt_Date_Year,
                              TO_CHAR(a.APPT_DTTM, 'mm-dd') AS Appt_Date,
