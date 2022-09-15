@@ -93,7 +93,7 @@ FROM (
 
 
 drop_population_query <- glue("DROP VIEW AMBULATORY_POPULATION")
-population_query <- glue("CREATE TABLE AMBULATORY_POPULATION AS 
+population_query <- glue("CREATE VIEW AMBULATORY_POPULATION AS 
 SELECT g.*
 FROM(
 SELECT e.*,
@@ -141,14 +141,19 @@ WHERE g.ZIP_CODE_LAYER_A is NOT NULL")
         }
         dbExecute(conn, access_query)
         dbExecute(conn, access_index)
-        
-        dbExecute(conn, drop_ambulatory_filters_query)
+        if(dbExistsTable(conn, "AMBULATORY_FILTERS")){
+          dbExecute(conn, drop_ambulatory_filters_query)
+        }
         dbExecute(conn, ambulatory_filters_query)
         
-        dbExecute(conn, drop_slot_query)
+        if(dbExistsTable(conn, "AMBULATORY_SLOT")){
+          dbExecute(conn, drop_slot_query)
+        }
         dbExecute(conn, slot_query)
         
-        dbExecute(conn, drop_population_query)
+        if(dbExistsTable(conn, "AMBULATORY_POPULATION")){
+          dbExecute(conn, drop_population_query)
+        }
         dbExecute(conn, population_query)
         
         dbCommit(conn)
