@@ -36,13 +36,13 @@ SELECT c.
                              a.PAT_ENC_CSN_ID, a.VISITPLAN, a.ATTRIB_BILL_AREA,
                              trunc(a.APPT_DTTM) AS Appt_Date_Year,
                              TO_CHAR(a.APPT_DTTM, 'DY') AS APPT_DAY,
-                             TRIM(TRAILING FROM REGEXP_REPLACE(a.PROV_NAME_WID, '\[(.*?)\]', '')) AS Provider,
+                             TRIM(TRAILING FROM REGEXP_REPLACE(a.PROV_NAME_WID, '{reg_exp}', '')) AS Provider,
                              CASE a.VISIT_PROV_STAFF_RESOURCE_C WHEN 1 THEN 'Provider' ELSE 'Resource' END AS Resources
 FROM MV_DM_PATIENT_ACCESS a
-        WHERE a.CONTACT_DATE BETWEEN TO_DATE('2021-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
-                        AND TO_DATE('2022-09-14 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
-                             OR a.APPT_MADE_DTTM BETWEEN TO_DATE('2021-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
-                        AND TO_DATE('2022-09-14 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+        WHERE a.CONTACT_DATE BETWEEN TO_DATE('{date_1} 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
+                        AND TO_DATE('{date_2} 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+                             OR a.APPT_MADE_DTTM BETWEEN TO_DATE('{date_1} 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
+                        AND TO_DATE('{date_2} 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
                     ) d
                     LEFT JOIN holidays b on d.Appt_Date_Year = b.dates
                     LEFT JOIN SUBTRACT_DAYS f on d.APPT_DAY = f.WEEKDAY
