@@ -18,7 +18,7 @@ date_2 <- Sys.Date() - 1
 reg_exp <- "\\[(.*?)\\]"
 
 access_query <- glue("CREATE TABLE AMBULATORY_ACCESS_TABLE AS
-SELECT c.
+SELECT c.*
     FROM(
      SELECT d.*, b.holiday, f.DAYS_SUBTRACT, h.APPT_SOURCE_NEW AS APPT_SOURCE_MAP
     FROM(
