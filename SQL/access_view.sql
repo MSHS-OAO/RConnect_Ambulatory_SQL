@@ -18,6 +18,7 @@ FROM(
             (a.APPT_DTTM - a.APPT_CANCEL_DTTM) AS Lead_Days,
             TRIM( ',' FROM a.DEPARTMENT||','||a.PROV_NAME_WID||','||a.MRN||','||a.APPT_DTTM ) AS uniqueID,
             CASE WHEN a.NEW_PT = 4 THEN 'NEW' ELSE 'ESTABLISHED' END AS NEW_PT2,
-            REGEXP_SUBSTR(a.CLASS_PT, 'NEW') AS NEW_PT3
+            REGEXP_SUBSTR(a.CLASS_PT, 'NEW') AS NEW_PT3,
+            CONCAT('Q',TO_CHAR(a.APPT_DTTM, 'Q')) AS APPT_QUARTER
         FROM AMBULATORY_ACCESS_TABLE a ) b
     ) c
