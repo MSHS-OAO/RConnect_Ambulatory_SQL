@@ -53,8 +53,8 @@ data.hour.scheduled[, hours] <- NA
 data.hour.scheduled <- data.hour.scheduled %>% pivot_longer(hours, names_to = "hour", values_to = "min") %>% mutate(hour = as.numeric(hour))
 
 
-data.hour.scheduled <- data.hour.scheduled %>% group_by(DEPARTMENT, PROV_NAME_WID, MRN, APPT_DTTM) %>% filter(hour(Appt.Start) <= hour)
-data.hour.scheduled <- data.hour.scheduled %>% group_by(DEPARTMENT, PROV_NAME_WID, MRN, APPT_DTTM) %>% filter(hour(Appt.End) >= hour)
+data.hour.scheduled <- data.hour.scheduled %>% group_by(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.Start) <= hour)
+data.hour.scheduled <- data.hour.scheduled %>% group_by(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.End) >= hour)
 
 
 data.hour.scheduled <- data.hour.scheduled %>% mutate(min = ifelse(hour(Appt.Start) == hour(Appt.End), difftime(Appt.End, Appt.Start, units = "mins"),
