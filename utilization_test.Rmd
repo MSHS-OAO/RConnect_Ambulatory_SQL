@@ -30,7 +30,7 @@ utilization_query <- glue("SELECT * FROM(
 WHERE APPT_DTTM BETWEEN TO_DATE(TRUNC(SYSDATE - 1), 'YYYY-MM-DD HH24:MI:SS')
 				AND TO_DATE(TRUNC(SYSDATE) - 1/(24*60*60), 'YYYY-MM-DD HH24:MI:SS')")
 
-# data.hour.scheduled <- dbGetQuery(conn, utilization_query)
+data.hour.scheduled <- dbGetQuery(conn, utilization_query)
 # data.hour.scheduled <- data.hour.scheduled %>% mutate(Appt.Start = as.POSIXct(APPT_DTTM, format = "%H:%M"))
 # data.hour.scheduled <- data.hour.scheduled %>% mutate(Appt.End = as.POSIXct(Appt.Start + APPT_DUR*60, format = "%H:%M"))
 # data.hour.scheduled <- data.hour.scheduled %>% mutate(Appt.Date = as.Date(APPT_DTTM))
