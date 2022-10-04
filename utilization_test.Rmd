@@ -68,6 +68,6 @@ data.hour.scheduled <- dbGetQuery(conn, utilization_query)
 # data.hour.scheduled <- data.hour.scheduled %>% mutate(min = ifelse(min == 0, NA, min))
 # ##Pviot data on hour and rename columns to HH:MM format
 # print(Sys.time())
-# print(data.hour.scheduled)
+print(data.hour.scheduled)
 ```
 
