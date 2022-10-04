@@ -14,7 +14,7 @@ library(readxl)
 library(glue)
 
 print(Sys.time())
-# conn <- dbConnect(odbc(), "OAO Cloud DB")
+conn <- dbConnect(odbc(), "OAO Cloud DB")
 # 
 # access <- tbl(conn, "AMBULATORY_ACCESS")
 # 
