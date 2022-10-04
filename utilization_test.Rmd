@@ -16,6 +16,8 @@ library(glue)
 print(Sys.time())
 conn <- dbConnect(odbc(), "OAO Cloud DB")
 
+date_1 <- Sys.Date() - 1
+date_2 <- Sys.Date() - 1
 
 utilization_query <- glue("SELECT * FROM(
     SELECT CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS
@@ -26,8 +28,8 @@ utilization_query <- glue("SELECT * FROM(
     UNION
     SELECT CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS
     FROM AMBULATORY_ACCESS WHERE APPT_STATUS IN ('Canceled', 'Bumped', 'Rescheduled') AND LEAD_DAYS = 0)
-WHERE APPT_DTTM BETWEEN TO_DATE(TRUNC(SYSDATE - 1), 'YYYY-MM-DD HH24:MI:SS')
-				AND TO_DATE(TRUNC(SYSDATE) - 1/(24*60*60), 'YYYY-MM-DD HH24:MI:SS')")
+WHERE APPT_DTTM BETWEEN TO_DATE('{date_1} 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
+				AND TO_DATE('{date_2} 23:59:59', 'YYYY-MM-DD HH24:MI:SS')")
 
 data.hour.scheduled <- dbGetQuery(conn, utilization_query)
 # data.hour.scheduled <- data.hour.scheduled %>% mutate(Appt.Start = as.POSIXct(APPT_DTTM, format = "%H:%M"))
