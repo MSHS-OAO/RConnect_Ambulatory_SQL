@@ -60,9 +60,9 @@ data.hour.scheduled <- data.hour.scheduled %>% group_by(CAMPUS, CAMPUS_SPECIALTY
 
 
 data.hour.scheduled <- data.hour.scheduled %>% mutate(min = ifelse(hour(Appt.Start) == hour(Appt.End), difftime(Appt.End, Appt.Start, units = "mins"),
-                                                                   ifelse(hour(Appt.Start) == hour, difftime(ceiling_date(Appt.Start, "hour", change_on_boundary = T), Appt.Start),
+                                                                   ifelse(hour(Appt.Start) == hour, difftime(ceiling_date(Appt.Start, "hour", change_on_boundary = T), Appt.Start, units = "mins"),
                                                                           ##The statement below needs to be updated
-                                                                          ifelse(hour(Appt.End) == hour,  difftime(Appt.End, floor_date(Appt.End, "hour"), "mins"),
+                                                                          ifelse(hour(Appt.End) == hour,  difftime(Appt.End, floor_date(Appt.End, "hour"), units = "mins"),
                                                                                  ifelse(hour %in% hour(Appt.Start):hour(Appt.End) , 60, NA
                                                                                         )
                                                                                  )
@@ -70,7 +70,7 @@ data.hour.scheduled <- data.hour.scheduled %>% mutate(min = ifelse(hour(Appt.Sta
                                                                    )
                                                       )
 data.hour.scheduled <- data.hour.scheduled %>% mutate(min = ifelse(min == 0, NA, min))
-data.hour.scheduled <- data.hour.scheduled %>% mutate(min = ifelse(min == 1, 60, min))
+# data.hour.scheduled <- data.hour.scheduled %>% mutate(min = ifelse(min == 1, 60, min))
 data.hour.scheduled <- data.hour.scheduled %>% pivot_wider(names_from = "hour", values_from = "min")
 
 data.hour.scheduled <- data.hour.scheduled %>% select(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR,                                                      Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `10`, `11`, `12`, `13`, `14`, `15`, `16`, `17`, `18`, `19`, `20`, `21`, `22`, `23`) %>%
@@ -141,9 +141,9 @@ data.hour.arrived <- data.hour.arrived %>% group_by(CAMPUS, CAMPUS_SPECIALTY, DE
 
 
 data.hour.arrived <- data.hour.arrived %>% mutate(min = ifelse(hour(Appt.Start) == hour(Appt.End), difftime(Appt.End, Appt.Start, units = "mins"),
-                                                                   ifelse(hour(Appt.Start) == hour, difftime(ceiling_date(Appt.Start, "hour", change_on_boundary = T), Appt.Start),
+                                                                   ifelse(hour(Appt.Start) == hour, difftime(ceiling_date(Appt.Start, "hour", change_on_boundary = T), Appt.Start, units = "mins"),
                                                                           ##The statement below needs to be updated
-                                                                          ifelse(hour(Appt.End) == hour,  difftime(Appt.End, floor_date(Appt.End, "hour"), "mins"),
+                                                                          ifelse(hour(Appt.End) == hour,  difftime(Appt.End, floor_date(Appt.End, "hour"), units = "mins"),
                                                                                  ifelse(hour %in% hour(Appt.Start):hour(Appt.End) , 60, NA
                                                                                         )
                                                                                  )
