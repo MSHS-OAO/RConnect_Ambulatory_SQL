@@ -146,10 +146,6 @@ data.hour.arrived <- data.hour.arrived %>% pivot_wider(names_from = "hour", valu
 data.hour.arrived <- data.hour.arrived %>% select(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM,VISIT_END_DTTM, ROOMIN_DTTM, APPT_STATUS, MRN, any_of(hours)) 
                                                 
 ## Fix code so it adds columns if not available
-# data.hour.arrived$`0` <- NA
-# data.hour.arrived$`2` <- NA
-# data.hour.arrived$`4` <- NA
-
 data.hour.arrived <- data.hour.arrived %>%
     mutate(hour= str_pad(hour, width = nchar("xX"), pad = "0", side = "left"))
 data.hour.arrived <- data.hour.arrived %>%
