@@ -97,14 +97,17 @@ timeOptionsHr <- c("00:00", "01:00", "02:00" , "03:00", "04:00", "05:00", "06:00
                    "20:00", "21:00", "22:00", "23:00")
 
 
+
 col_index <- which(!(timeOptionsHr %in% names(data.hour.scheduled))) 
 
-column_to_add <- timeOptionsHr[col_index]
-
-
-for(i in 1:length(column_to_add)){
+if(length(col_index) >= 1) {
+  column_to_add <- timeOptionsHr[col_index]
   
-  data.hour.scheduled[[column_to_add[i]]] <- NA
+  
+  for(i in 1:length(column_to_add)){
+    
+    data.hour.scheduled[[column_to_add[i]]] <- NA
+  }
 }
 
 
@@ -177,11 +180,14 @@ data.hour.arrived <- data.hour.arrived %>% pivot_wider(names_from = "hour", valu
 # Added missing columns 
 
 col_index <- which(!(timeOptionsHr %in% names(data.hour.arrived)))
-column_to_add <- timeOptionsHr[col_index]
 
-for(i in 1:length(column_to_add)){
+if(length(col_index) >= 1){
+  column_to_add <- timeOptionsHr[col_index]
   
-  data.hour.arrived[[column_to_add[i]]] <- NA
+  for(i in 1:length(column_to_add)){
+    
+    data.hour.arrived[[column_to_add[i]]] <- NA
+  }
 }
 
 
