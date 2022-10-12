@@ -15,7 +15,7 @@ library(glue)
 library(data.table)
 
 
-start <- Sys.time()
+
 conn <- dbConnect(odbc(), "OAO Cloud DB")
 
 date_1 <- Sys.Date() - 1
@@ -224,7 +224,135 @@ utilization.data <- rbind(data.hour.scheduled, data.hour.arrived)
 
 utilization.data <- utilization.data %>% select(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, all_of(timeOptionsHr_filter))
 
-end <- Sys.time()
+
+
+
+TABLE_NAME <-  "utilization_table"
+
+# function to convert the record of data frame to into satement
+get_values <- function(x,table_name){
+  
+  CAMPUS <- x[1]
+  CAMPUS_SPECIALTY <- x[2]
+  DEPARTMENT <- x[3]
+  RESOURCES <- x[4]
+  PROVIDER <- x[5]
+  VISIT_METHOD <- x[6]
+  APPT_DATE_YEAR <- x[7]
+  APPT_MONTH_YEAR <- x[8]
+  APPT_YEAR <- x[9]
+  APPT_WEEK <- x[10]
+  APPT_DAY <- x[11]
+  HOLIDAY <- x[12]
+  APPT_DUR <- x[13]      
+  Appt.Start <- x[14]
+  Appt.End <- x[15]
+  APPT_DTTM <- x[16]
+  APPT_STATUS <- x[17]
+  MRN <-  x[18]
+  `07:00` <- x[19]
+  `08:00` <-  x[20]
+  `09:00` <-  x[21]
+  `10:00` <-  x[22]
+  `11:00` <-  x[23]
+  `12:00` <-  x[24]
+  `13:00` <-  x[25]
+  `14:00` <-  x[26]
+  `15:00` <-  x[27]
+  `16:00` <-  x[28]
+  `17:00` <-  x[29]
+  `18:00` <-  x[30]
+  `19:00` <-  x[31]
+  `20:00` <-  x[32]
+  
+  
+  values <- glue("INTO \"{table_name}\"(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, 
+                 RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, 
+                 APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, 
+                 APPT_DUR, Appt_Start, Appt_End, APPT_DTTM, APPT_STATUS, MRN,
+                 H_07_00, H_08_00, H_09_00, H_10_00, H_11_00, H_12_00, H_13_00, 
+                 H_14_00, H_15_00, H_16_00, H_17_00, H_18_00, H_19_00, H_20_00
+                 ')
+                 VALUES('{CAMPUS}', '{CAMPUS_SPECIALTY}', '{RESOURCES}','{PROVIDER}',
+                 '{VISIT_METHOD}',  TO_DATE('{APPT_DATE_YEAR}', 'YYYY-MM-DD'),
+                 '{APPT_MONTH_YEAR}', '{APPT_YEAR}', TO_DATE('{APPT_WEEK}', 'YYYY-MM-DD'), 
+                 '{APPT_DAY}', '{HOLIDAY}', '{APPT_DUR}', TO_DATE('{Appt.Start}', 'YYYY-MM-DD HH:MM:SS'), 
+                  TO_DATE('{Appt.End}', 'YYYY-MM-DD HH:MM:SS'), TO_DATE('{APPT_DTTM}', 'YYYY-MM-DD HH:MM:SS'),
+                  '{APPT_STATUS}', '{MRN}', '{`07:00`}','{`08:00`}','{`09:00`}', '{`10:00`}',
+                  '{`11:00`}','{`12:00`}', '{`13:00`}', '{`14:00`}','{`15:00`}',
+                  '{`16:00`}', '{`17:00`}','{`18:00`}','{`19:00`}','{`20:00`}')")
+                  
+  
+  return(values)
+}
+
+
+
+# Add UPDATE_TIME and check for all the fields are characters
+utilization.data <- utilization.data %>%
+  mutate(CAMPUS = as.character(CAMPUS),
+         CAMPUS_SPECIALTY = as.character(CAMPUS_SPECIALTY),
+         DEPARTMENT = as.character(DEPARTMENT),
+         RESOURCES = as.character(RESOURCES), 
+         PROVIDER = as.character(PROVIDER),
+         VISIT_METHOD = as.character(VISIT_METHOD),
+         APPT_DATE_YEAR = as.character(APPT_DATE_YEAR), 
+         APPT_MONTH_YEAR = as.character(APPT_MONTH_YEAR),
+         APPT_YEAR = as.numeric(APPT_YEAR), 
+         APPT_WEEK = as.character(APPT_WEEK),
+         APPT_DAY = as.character(APPT_DAY),
+         HOLIDAY = as.character(HOLIDAY),
+         APPT_DUR= as.numeric(APPT_DUR), 
+         Appt.Start= as.character(Appt.Start), 
+         Appt.End= as.character(Appt.End), 
+         APPT_DTTM= as.character(APPT_DTTM), 
+         APPT_STATUS= as.character(APPT_STATUS),
+         MRN= as.character(MRN),
+         `07:00`= as.numeric(`07:00`),
+         `08:00`= as.numeric(`08:00`),
+         `09:00`= as.numeric(`09:00`),
+         `10:00`= as.numeric(`10:00`),
+         `11:00`= as.numeric(`11:00`),
+         `12:00`= as.numeric(`12:00`),
+         `13:00`= as.numeric(`13:00`),
+         `14:00`= as.numeric(`14:00`),
+         `15:00`= as.numeric(`15:00`),
+         `16:00`= as.numeric(`16:00`),
+         `17:00`= as.numeric(`17:00`),
+         `18:00`= as.numeric(`18:00`),
+         `19:00`= as.numeric(`19:00`),
+         `20:00`= as.numeric(`20:00`))%>%
+  
+         select(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, 
+         VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, 
+         APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, 
+         APPT_STATUS, MRN, `07:00`,`08:00`,`09:00`, `10:00`,`11:00`,`12:00`,
+         `13:00`, `14:00`,`15:00`,`16:00`,`17:00`,`18:00`,`19:00`,`20:00`)
+
+
+# Convert the each record/row of tibble to INTO clause of insert statment
+inserts <- lapply(
+  lapply(
+    lapply(split(utilization.data  , 
+                 1:nrow(utilization.data )),
+           as.list), 
+    as.character),
+  FUN = get_values ,TABLE_NAME)
+
+values <- glue_collapse(inserts,sep = "\n\n")
+
+
+# Combine into statements from get_values() function and combine with
+# insert statements
+all_data <- glue('INSERT ALL
+                      {values}
+                    SELECT 1 from DUAL;')
+
+
+print(all_data)
+       
+
+
 
 ```
 
