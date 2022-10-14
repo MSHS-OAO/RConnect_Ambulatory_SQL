@@ -13,6 +13,7 @@ library(lubridate)
 library(readxl)
 library(glue)
 library(data.table)
+library(DBI)
 
 
 
@@ -72,12 +73,6 @@ data.hour.scheduled <- data.hour.scheduled %>%
                                                                           )
                                                                    )
                                                       )
-
-
-
-
-
-
 data.hour.scheduled <- data.hour.scheduled %>% mutate(min = ifelse(min == 0, NA, min))
 
 ##Rename columns to HH:MM format
@@ -272,12 +267,12 @@ get_values <- function(x,table_name){
                  APPT_DUR, Appt_Start, Appt_End, APPT_DTTM, APPT_STATUS, MRN,
                  H_07_00, H_08_00, H_09_00, H_10_00, H_11_00, H_12_00, H_13_00, 
                  H_14_00, H_15_00, H_16_00, H_17_00, H_18_00, H_19_00, H_20_00
-                 ')
-                 VALUES('{CAMPUS}', '{CAMPUS_SPECIALTY}', '{RESOURCES}','{PROVIDER}',
+                 )
+                 VALUES('{CAMPUS}', '{CAMPUS_SPECIALTY}', '{DEPARTMENT}', '{RESOURCES}','{PROVIDER}',
                  '{VISIT_METHOD}',  TO_DATE('{APPT_DATE_YEAR}', 'YYYY-MM-DD'),
                  '{APPT_MONTH_YEAR}', '{APPT_YEAR}', TO_DATE('{APPT_WEEK}', 'YYYY-MM-DD'), 
-                 '{APPT_DAY}', '{HOLIDAY}', '{APPT_DUR}', TO_DATE('{Appt.Start}', 'YYYY-MM-DD HH:MM:SS'), 
-                  TO_DATE('{Appt.End}', 'YYYY-MM-DD HH:MM:SS'), TO_DATE('{APPT_DTTM}', 'YYYY-MM-DD HH:MM:SS'),
+                 '{APPT_DAY}', '{HOLIDAY}', '{APPT_DUR}', TO_DATE('{Appt.Start}', 'YYYY-MM-DD HH24:MI:SS'), 
+                  TO_DATE('{Appt.End}', 'YYYY-MM-DD HH24:MI:SS'), TO_DATE('{APPT_DTTM}', 'YYYY-MM-DD HH24:MI:SS'),
                   '{APPT_STATUS}', '{MRN}', '{`07:00`}','{`08:00`}','{`09:00`}', '{`10:00`}',
                   '{`11:00`}','{`12:00`}', '{`13:00`}', '{`14:00`}','{`15:00`}',
                   '{`16:00`}', '{`17:00`}','{`18:00`}','{`19:00`}','{`20:00`}')")
@@ -348,8 +343,36 @@ all_data <- glue('INSERT ALL
                       {values}
                     SELECT 1 from DUAL;')
 
+all_data <- gsub('NA', "", all_data)
 
-print(all_data)
+dbBegin(conn)
+
+
+
+
+tryCatch({
+  
+  dbExecute(conn, all_data)
+  dbCommit(conn)
+  dbDisconnect(conn)
+  
+  
+  
+},
+error = function(err){
+   print(err)
+   dbRollback(conn)
+   dbDisconnect(conn)
+   print("error")
+}  
+
+
+
+
+)
+
+
+
        
 
 
