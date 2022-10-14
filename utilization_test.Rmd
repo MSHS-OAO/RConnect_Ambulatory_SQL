@@ -229,7 +229,7 @@ utilization.data <- utilization.data %>% select(CAMPUS, CAMPUS_SPECIALTY, DEPART
 
 TABLE_NAME <-  "utilization_table"
 
-# function to convert the record of data frame to into satement
+# function to convert the record of data frame to into statement
 get_values <- function(x,table_name){
   
   CAMPUS <- x[1]
@@ -349,7 +349,28 @@ all_data <- glue('INSERT ALL
                     SELECT 1 from DUAL;')
 
 
-print(all_data)
+dbBegin(conn)
+
+
+tryCatch({
+  
+  dbExecute(conn, all_data)
+  dbCommit(conn)
+  dbDisconnect(conn)
+  
+  
+  
+},
+ error = function(err){
+   print(err)
+   dbRollback(conn)
+   dbDisconnect(conn)
+   print("error")
+ }  
+
+
+)
+
        
 
 
