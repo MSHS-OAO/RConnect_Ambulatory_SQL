@@ -13,6 +13,7 @@ library(lubridate)
 library(readxl)
 library(glue)
 library(data.table)
+library(DBI)
 
 
 
@@ -61,23 +62,18 @@ data.hour.scheduled <- data.hour.scheduled %>% pivot_longer(hours, names_to = "h
 data.hour.scheduled <- data.hour.scheduled %>% group_by(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.Start) <= hour)
 data.hour.scheduled <- data.hour.scheduled %>% group_by(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.End) >= hour)
 
-
-data.hour.scheduled <- data.hour.scheduled %>% 
-  mutate(min = ifelse(hour(Appt.Start) == hour(Appt.End), difftime(Appt.End, Appt.Start, units = "mins"),
-  ifelse(hour(Appt.Start) == hour, difftime(ceiling_date(Appt.Start, "hour", change_on_boundary = T), Appt.Start, units = "mins"),
-                        ifelse(hour(Appt.End) == hour,  difftime(Appt.End, floor_date(Appt.End, "hour"), units = "mins"),
-                                                                                 ifelse(hour %in% hour(Appt.Start):hour(Appt.End) , 60, NA
-                                                                                        )
-                                                                                 )
-                                                                          )
-                                                                   )
-                                                      )
-
-
-
-
-
-
+suppressWarnings(
+  data.hour.scheduled <- data.hour.scheduled %>% 
+    mutate(min = ifelse(hour(Appt.Start) == hour(Appt.End), difftime(Appt.End, Appt.Start, units = "mins"),
+    ifelse(hour(Appt.Start) == hour, difftime(ceiling_date(Appt.Start, "hour", change_on_boundary = T), Appt.Start, units = "mins"),
+                          ifelse(hour(Appt.End) == hour,  difftime(Appt.End, floor_date(Appt.End, "hour"), units = "mins"),
+                                                                                   ifelse(hour %in% hour(Appt.Start):hour(Appt.End) , 60, NA
+                                                                                          )
+                                                                                   )
+                                                                            )
+                                                                     )
+                                                        )
+)
 data.hour.scheduled <- data.hour.scheduled %>% mutate(min = ifelse(min == 0, NA, min))
 
 ##Rename columns to HH:MM format
@@ -151,16 +147,18 @@ data.hour.arrived <- data.hour.arrived %>% group_by(CAMPUS, CAMPUS_SPECIALTY, DE
 data.hour.arrived <- data.hour.arrived %>% group_by(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.End) >= hour)
 
 
-data.hour.arrived <- data.hour.arrived %>% 
-  mutate(min = ifelse(hour(Appt.Start) == hour(Appt.End), difftime(Appt.End, Appt.Start, units = "mins"),
-    ifelse(hour(Appt.Start) == hour, difftime(ceiling_date(Appt.Start, "hour", change_on_boundary = T), Appt.Start, units = "mins"),
-                            ifelse(hour(Appt.End) == hour,  difftime(Appt.End, floor_date(Appt.End, "hour"), units = "mins"),
-                                                                  ifelse(hour %in% hour(Appt.Start):hour(Appt.End) , 60, NA
-                                                                                        )
-                                                                                 )
-                                                                          )
-                                                                   )
-                                                      )
+suppressWarnings(
+  data.hour.arrived <- data.hour.arrived %>% 
+    mutate(min = ifelse(hour(Appt.Start) == hour(Appt.End), difftime(Appt.End, Appt.Start, units = "mins"),
+      ifelse(hour(Appt.Start) == hour, difftime(ceiling_date(Appt.Start, "hour", change_on_boundary = T), Appt.Start, units = "mins"),
+                              ifelse(hour(Appt.End) == hour,  difftime(Appt.End, floor_date(Appt.End, "hour"), units = "mins"),
+                                                                    ifelse(hour %in% hour(Appt.Start):hour(Appt.End) , 60, NA
+                                                                                          )
+                                                                                   )
+                                                                            )
+                                                                     )
+                                                        )
+)
 
 data.hour.arrived <- data.hour.arrived %>% mutate(min = ifelse(min == 0, NA, min))
 
@@ -229,7 +227,7 @@ utilization.data <- utilization.data %>% select(CAMPUS, CAMPUS_SPECIALTY, DEPART
 
 TABLE_NAME <-  "utilization_table"
 
-# function to convert the record of data frame to into statement
+# function to convert the record of data frame to into satement
 get_values <- function(x,table_name){
   
   CAMPUS <- x[1]
@@ -272,12 +270,12 @@ get_values <- function(x,table_name){
                  APPT_DUR, Appt_Start, Appt_End, APPT_DTTM, APPT_STATUS, MRN,
                  H_07_00, H_08_00, H_09_00, H_10_00, H_11_00, H_12_00, H_13_00, 
                  H_14_00, H_15_00, H_16_00, H_17_00, H_18_00, H_19_00, H_20_00
-                 ')
-                 VALUES('{CAMPUS}', '{CAMPUS_SPECIALTY}', '{RESOURCES}','{PROVIDER}',
+                 )
+                 VALUES('{CAMPUS}', '{CAMPUS_SPECIALTY}', '{DEPARTMENT}', '{RESOURCES}','{PROVIDER}',
                  '{VISIT_METHOD}',  TO_DATE('{APPT_DATE_YEAR}', 'YYYY-MM-DD'),
                  '{APPT_MONTH_YEAR}', '{APPT_YEAR}', TO_DATE('{APPT_WEEK}', 'YYYY-MM-DD'), 
-                 '{APPT_DAY}', '{HOLIDAY}', '{APPT_DUR}', TO_DATE('{Appt.Start}', 'YYYY-MM-DD HH:MM:SS'), 
-                  TO_DATE('{Appt.End}', 'YYYY-MM-DD HH:MM:SS'), TO_DATE('{APPT_DTTM}', 'YYYY-MM-DD HH:MM:SS'),
+                 '{APPT_DAY}', '{HOLIDAY}', '{APPT_DUR}', TO_DATE('{Appt.Start}', 'YYYY-MM-DD HH24:MI:SS'), 
+                  TO_DATE('{Appt.End}', 'YYYY-MM-DD HH24:MI:SS'), TO_DATE('{APPT_DTTM}', 'YYYY-MM-DD HH24:MI:SS'),
                   '{APPT_STATUS}', '{MRN}', '{`07:00`}','{`08:00`}','{`09:00`}', '{`10:00`}',
                   '{`11:00`}','{`12:00`}', '{`13:00`}', '{`14:00`}','{`15:00`}',
                   '{`16:00`}', '{`17:00`}','{`18:00`}','{`19:00`}','{`20:00`}')")
@@ -329,6 +327,10 @@ utilization.data <- utilization.data %>%
          APPT_STATUS, MRN, `07:00`,`08:00`,`09:00`, `10:00`,`11:00`,`12:00`,
          `13:00`, `14:00`,`15:00`,`16:00`,`17:00`,`18:00`,`19:00`,`20:00`)
 
+special_character_columns <- c("CAMPUS", "CAMPUS_SPECIALTY", "DEPARTMENT", "RESOURCES", "PROVIDER", "VISIT_METHOD", "APPT_STATUS")
+utilization.data <- utilization.data %>% mutate_at(all_of(special_character_columns), ~ str_replace(., "'", "''"))
+
+
 
 # Convert the each record/row of tibble to INTO clause of insert statment
 inserts <- lapply(
@@ -339,41 +341,29 @@ inserts <- lapply(
     as.character),
   FUN = get_values ,TABLE_NAME)
 
-values <- glue_collapse(inserts,sep = "\n\n")
-
-
-# Combine into statements from get_values() function and combine with
-# insert statements
-all_data <- glue('INSERT ALL
-                      {values}
-                    SELECT 1 from DUAL;')
-
-
-dbBegin(conn)
-
-
-tryCatch({
-  
-  dbExecute(conn, all_data)
-  dbCommit(conn)
-  dbDisconnect(conn)
-  
-  
-  
-},
- error = function(err){
-   print(err)
-   dbRollback(conn)
-   dbDisconnect(conn)
-   print("error")
- }  
-
-
-)
-
-       
+r <- 0
+chunk_length <- 1000
+split_queries <- split(inserts, ceiling(seq_along(inserts) / chunk_length))
 
 
 
+conn <- dbConnect(odbc(), "OAO Cloud DB")
+for (i in 1:length(split_queries)) {
+  row <- glue_collapse(split_queries[[i]], sep = "\n\n")
+  row <- gsub('NA', "", row)
+  row <- gsub("&", " ' || chr(38) || ' ", row)
+  sql <- glue('INSERT ALL {row} SELECT 1 FROM DUAL;')
+    tryCatch({
+      dbBegin(conn)
+      dbExecute(conn, sql)
+      dbCommit(conn)
+      r <- r+1
+    },
+    error = function(err){
+      print(r)
+      dbRollback(conn)
+      dbDisconnect(conn)
+
+    })
+}
 ```
-
