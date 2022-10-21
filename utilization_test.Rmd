@@ -14,6 +14,8 @@ library(readxl)
 library(glue)
 library(data.table)
 library(DBI)
+library(foreach)
+library(doParallel)
 
 
 
@@ -126,12 +128,6 @@ data.hour.scheduled <- data.hour.scheduled %>% filter(comparison == 0)
 
 
 ###Data hour Actual --------------------------------------------------------------
-utilization_query_actual <- glue("SELECT CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS, MRN, VISIT_END_DTTM, ROOMIN_DTTM
-          FROM AMBULATORY_ACCESS WHERE APPT_STATUS = 'Arrived'
-      AND APPT_DTTM BETWEEN TO_DATE('{date_1} 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
-      				AND TO_DATE('{date_2} 23:59:59', 'YYYY-MM-DD HH24:MI:SS')")
-
-# data.hour.arrived <- dbGetQuery(conn, utilization_query_actual)
 data.hour.arrived <- utilization_data_raw %>% filter(APPT_STATUS == 'Arrived')
 
 
@@ -369,8 +365,7 @@ split_queries <- split(inserts, ceiling(seq_along(inserts) / chunk_length))
 #     })
 # }
 
-library(foreach)
-library(doParallel)
+
 split_queries_test <- list()
 for (i in 1:length(split_queries)) {
   row <- glue_collapse(split_queries[[i]], sep = "\n\n")
