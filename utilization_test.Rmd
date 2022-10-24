@@ -14,6 +14,8 @@ library(readxl)
 library(glue)
 library(data.table)
 library(DBI)
+library(foreach)
+library(doParallel)
 
 
 
@@ -23,18 +25,19 @@ date_1 <- Sys.Date() - 1
 date_2 <- Sys.Date() - 1
 
 utilization_query_scheduled <- glue("SELECT * FROM(
-    SELECT CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS, MRN
+    SELECT CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS, MRN, VISIT_END_DTTM, ROOMIN_DTTM
     FROM AMBULATORY_ACCESS WHERE APPT_STATUS = 'Arrived'
     UNION
-    SELECT CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS, MRN
+    SELECT CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS, MRN, VISIT_END_DTTM, ROOMIN_DTTM
     FROM AMBULATORY_ACCESS WHERE APPT_STATUS = 'No Show'
     UNION
-    SELECT CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS, MRN
+    SELECT CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS, MRN, VISIT_END_DTTM, ROOMIN_DTTM
     FROM AMBULATORY_ACCESS WHERE APPT_STATUS IN ('Canceled', 'Bumped', 'Rescheduled') AND LEAD_DAYS = 0)
 WHERE APPT_DTTM BETWEEN TO_DATE('{date_1} 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
 				AND TO_DATE('{date_2} 23:59:59', 'YYYY-MM-DD HH24:MI:SS')")
 
-data.hour.scheduled <- dbGetQuery(conn, utilization_query_scheduled)
+utilization_data_raw <- dbGetQuery(conn, utilization_query_scheduled)
+data.hour.scheduled <- utilization_data_raw %>% select(-VISIT_END_DTTM, -ROOMIN_DTTM)
 # data.hour.scheduled.save <- data.hour.scheduled
 data.hour.scheduled <- data.hour.scheduled %>% mutate(Appt.Start = as.POSIXct(APPT_DTTM, format = "%H:%M"))
 data.hour.scheduled <- data.hour.scheduled %>% mutate(Appt.End = as.POSIXct(Appt.Start + APPT_DUR*60, format = "%H:%M"))
@@ -125,12 +128,7 @@ data.hour.scheduled <- data.hour.scheduled %>% filter(comparison == 0)
 
 
 ###Data hour Actual --------------------------------------------------------------
-utilization_query_actual <- glue("SELECT CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS, MRN, VISIT_END_DTTM, ROOMIN_DTTM
-          FROM AMBULATORY_ACCESS WHERE APPT_STATUS = 'Arrived'
-      AND APPT_DTTM BETWEEN TO_DATE('{date_1} 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
-      				AND TO_DATE('{date_2} 23:59:59', 'YYYY-MM-DD HH24:MI:SS')")
-
-data.hour.arrived <- dbGetQuery(conn, utilization_query_actual)
+data.hour.arrived <- utilization_data_raw %>% filter(APPT_STATUS == 'Arrived')
 
 
 ########### Analysis of % of visits with actual visit start and end times ############
@@ -332,6 +330,7 @@ utilization.data <- utilization.data %>% mutate_at(all_of(special_character_colu
 
 
 
+
 # Convert the each record/row of tibble to INTO clause of insert statment
 inserts <- lapply(
   lapply(
@@ -341,29 +340,59 @@ inserts <- lapply(
     as.character),
   FUN = get_values ,TABLE_NAME)
 
+
 r <- 0
 chunk_length <- 1000
 split_queries <- split(inserts, ceiling(seq_along(inserts) / chunk_length))
 
+# # conn <- dbConnect(odbc(), "OAO Cloud DB")
+# for (i in 1:length(split_queries)) {
+#   row <- glue_collapse(split_queries[[i]], sep = "\n\n")
+#   row <- gsub('NA', "", row)
+#   row <- gsub("&", " ' || chr(38) || ' ", row)
+#   sql <- glue('INSERT ALL {row} SELECT 1 FROM DUAL;')
+#     tryCatch({
+#       dbBegin(conn)
+#       dbExecute(conn, sql)
+#       dbCommit(conn)
+#       r <- r+1
+#     },
+#     error = function(err){
+#       print(r)
+#       dbRollback(conn)
+#       dbDisconnect(conn)
+# 
+#     })
+# }
 
 
-conn <- dbConnect(odbc(), "OAO Cloud DB")
+split_queries_test <- list()
 for (i in 1:length(split_queries)) {
   row <- glue_collapse(split_queries[[i]], sep = "\n\n")
   row <- gsub('NA', "", row)
   row <- gsub("&", " ' || chr(38) || ' ", row)
   sql <- glue('INSERT ALL {row} SELECT 1 FROM DUAL;')
-    tryCatch({
-      dbBegin(conn)
-      dbExecute(conn, sql)
-      dbCommit(conn)
-      r <- r+1
+  split_queries_test <- append(split_queries_test, sql)
+}
+registerDoParallel()
+system.time(
+  outputPar <- foreach(i = 1:length(split_queries_test), .packages = c("DBI", "odbc"))%dopar%{
+#Connecting to database through DBI
+  ch = dbConnect(odbc(), "OAO Cloud DB")
+#Test connection
+      tryCatch({
+      dbBegin(ch)
+      dbExecute(ch, split_queries_test[[i]])
+      dbCommit(ch)
     },
     error = function(err){
-      print(r)
-      dbRollback(conn)
-      dbDisconnect(conn)
+      print("error")
+      dbRollback(ch)
+      dbDisconnect(ch)
 
     })
 }
+)
+registerDoSEQ()
+
 ```
