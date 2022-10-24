@@ -20,8 +20,8 @@ library(doParallel)
 
 conn <- dbConnect(odbc(), "OAO Cloud DB")
 
-date_1 <- Sys.Date() - 1
-date_2 <- Sys.Date() - 1
+date_1 <- Sys.Date() - 2
+date_2 <- Sys.Date() - 2
 
 utilization_query_scheduled <- glue("SELECT * FROM(
     SELECT CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS, MRN, VISIT_END_DTTM, ROOMIN_DTTM
