@@ -51,8 +51,8 @@ data.hour.scheduled[, hours] <- NA
 data.hour.scheduled <- data.hour.scheduled %>% pivot_longer(hours, names_to = "hour", values_to = "min") %>% mutate(hour = as.numeric(hour))
 
 
-data.hour.scheduled <- data.hour.scheduled %>% group_by(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.Start) <= hour)
-data.hour.scheduled <- data.hour.scheduled %>% group_by(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.End) >= hour)
+data.hour.scheduled <- data.hour.scheduled %>% group_by(DEPARTMENT_ID, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.Start) <= hour)
+data.hour.scheduled <- data.hour.scheduled %>% group_by(DEPARTMENT_ID, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.End) >= hour)
 
 suppressWarnings(
   data.hour.scheduled <- data.hour.scheduled %>% 
@@ -103,7 +103,7 @@ if(length(col_index) >= 1) {
 data.hour.scheduled <- data.hour.scheduled[,c(names(data.hour.scheduled[,1:19]), timeOptionsHr) ]
 
 
-data.hour.scheduled <- data.hour.scheduled %>% select(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR,                                                      Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, all_of(timeOptionsHr)) 
+data.hour.scheduled <- data.hour.scheduled %>% select(DEPARTMENT_ID, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR,                                                      Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, all_of(timeOptionsHr)) 
 
 
 data.hour.scheduled$sum <- rowSums(data.hour.scheduled[,which(colnames(data.hour.scheduled)=="00:00"):                          which(colnames(data.hour.scheduled) =="23:00")], na.rm = T)
@@ -144,8 +144,8 @@ data.hour.arrived[, hours] <- NA
 data.hour.arrived <- data.hour.arrived %>% pivot_longer(hours, names_to = "hour", values_to = "min") %>% mutate(hour = as.numeric(hour))
 
 
-data.hour.arrived <- data.hour.arrived %>% group_by(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.Start) <= hour)
-data.hour.arrived <- data.hour.arrived %>% group_by(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.End) >= hour)
+data.hour.arrived <- data.hour.arrived %>% group_by(DEPARTMENT_ID, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.Start) <= hour)
+data.hour.arrived <- data.hour.arrived %>% group_by(DEPARTMENT_ID, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.End) >= hour)
 
 
 suppressWarnings(
@@ -194,7 +194,7 @@ data.hour.arrived <- data.hour.arrived[,c(names(data.hour.arrived[,1:20]), timeO
 
 
 
-data.hour.arrived <- data.hour.arrived %>% select(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM,VISIT_END_DTTM, ROOMIN_DTTM, APPT_STATUS, MRN, all_of(timeOptionsHr))
+data.hour.arrived <- data.hour.arrived %>% select(DEPARTMENT_ID, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM,VISIT_END_DTTM, ROOMIN_DTTM, APPT_STATUS, MRN, all_of(timeOptionsHr))
 
 
 
@@ -221,7 +221,8 @@ data.hour.arrived <- data.hour.arrived %>% select(-VISIT_END_DTTM, -ROOMIN_DTTM)
 
 utilization.data <- rbind(data.hour.scheduled, data.hour.arrived)
 
-utilization.data <- utilization.data %>% select(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, all_of(timeOptionsHr_filter))
+utilization.data <- utilization.data %>% select(DEPARTMENT_ID, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, all_of(timeOptionsHr_filter))
+
 
 
 TABLE_NAME <-  "utilization_table"
