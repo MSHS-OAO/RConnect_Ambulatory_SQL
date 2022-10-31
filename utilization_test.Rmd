@@ -124,19 +124,6 @@ data.hour.arrived <- utilization_data_raw %>% filter(APPT_STATUS == 'Arrived')
 
  data.hour.arrived  <- data.hour.arrived  %>% mutate(Appt.Start = ROOMIN_DTTM, Appt.End = VISIT_END_DTTM)
 
-# data.hour.arrived$actual.visit.dur <- round(difftime(data.hour.arrived$VISIT_END_DTTM, data.hour.arrived$ROOMIN_DTTM, units = "mins"))
-# 
-# ########### Analysis of % of visits with actual visit start and end times ############
-# 
-# data.hour.arrived$Appt.Start <- format(strptime(as.ITime(data.hour.arrived$ROOMIN_DTTM), "%H:%M:%S"),'%H:%M:%S')
-# data.hour.arrived$Appt.Start <- as.POSIXct(data.hour.arrived$Appt.Start, format = "%H:%M")
-# data.hour.arrived$Appt.End <- as.POSIXct(data.hour.arrived$Appt.Start + data.hour.arrived$actual.visit.dur, format = "%H:%M")
-# 
-# data.hour.arrived$Appt.Start <- data.hour.arrived$Appt.Start
-# data.hour.arrived$Appt.End <- data.hour.arrived$Appt.End
-# 
-# data.hour.arrived <- data.hour.arrived %>% select(-actual.visit.dur)
-
 
 ##Fill new columns with NA
 data.hour.arrived[, hours] <- NA
