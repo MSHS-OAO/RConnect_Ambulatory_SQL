@@ -217,38 +217,41 @@ utilization.data <- utilization.data %>% select(DEPARTMENT_ID, RESOURCES, PROVID
 
 TABLE_NAME <-  "utilization_table"
 
-# function to convert the record of data frame to into satement
+# function to convert the record of data frame to into statement
 get_values <- function(x,table_name){
-  DEPARTMENT_ID <- x$DEPARTMENT_ID
-  RESOURCES <- x$RESOURCES
-  PROVIDER <- x$PROVIDER
-  VISIT_METHOD <- x$VISIT_METHOD
-  APPT_DATE_YEAR <- x$APPT_DATE_YEAR
-  APPT_MONTH_YEAR <- x$APPT_MONTH_YEAR
-  APPT_YEAR <- x$APPT_YEAR
-  APPT_WEEK <- x$APPT_WEEK
-  APPT_DAY <- x$APPT_DAY
-  HOLIDAY <- x$HOLIDAY
-  APPT_DUR <- x$APPT_DUR     
-  Appt.Start <- x$Appt.Start
-  Appt.End <- x$Appt.End
-  APPT_DTTM <- x$APPT_DTTM
-  APPT_STATUS <- x$APPT_STATUS
-  MRN <-  x$MRN
-  `07:00` <- x$`07:00`
-  `08:00` <-  x$`08:00`
-  `09:00` <-  x$`09:00`
-  `10:00` <-  x$`10:00`
-  `11:00` <-  x$`11:00`
-  `12:00` <-  x$`12:00`
-  `13:00` <-  x$`13:00`
-  `14:00` <-  x$`14:00`
-  `15:00` <-  x$`15:00`
-  `16:00` <-  x$`16:00`
-  `17:00` <-  x$`17:00`
-  `18:00` <-  x$`18:00`
-  `19:00` <-  x$`19:00`
-  `20:00` <-  x$`20:00`
+  
+  DEPARTMENT_ID <- x[1]
+  RESOURCES <- x[2]
+  PROVIDER <- x[3]
+  VISIT_METHOD <- x[4]
+  APPT_DATE_YEAR <- x[5]
+  APPT_MONTH_YEAR <- x[6]
+  APPT_YEAR <- x[7]
+  APPT_WEEK <- x[8]
+  APPT_DAY <- x[9]
+  HOLIDAY <- x[10]
+  APPT_DUR <- x[11]      
+  Appt.Start <- x[12]
+  Appt.End <- x[13]
+  APPT_DTTM <- x[14]
+  APPT_STATUS <- x[15]
+  MRN <-  x[16]
+  `07:00` <- x[17]
+  `08:00` <-  x[18]
+  `09:00` <-  x[19]
+  `10:00` <-  x[20]
+  `11:00` <-  x[21]
+  `12:00` <-  x[22]
+  `13:00` <-  x[23]
+  `14:00` <-  x[24]
+  `15:00` <-  x[25]
+  `16:00` <-  x[26]
+  `17:00` <-  x[27]
+  `18:00` <-  x[28]
+  `19:00` <-  x[29]
+  `20:00` <-  x[30]
+  
+
   
   
   values <- glue("INTO \"{table_name}\"DEPARTMENT_ID, 
