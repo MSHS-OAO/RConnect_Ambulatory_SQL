@@ -21,25 +21,21 @@ library(doParallel)
 
 conn <- dbConnect(odbc(), "OAO Cloud DB")
 
-date_1 <- "2022-08-01"
-date_2 <- "2022-08-01"
+date_1 <- Sys.Date() - 5
+date_2 <- Sys.Date() - 5
 
-utilization_query_scheduled <- glue("SELECT CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS, MRN, VISIT_END_DTTM, ROOMIN_DTTM
-    FROM AMBULATORY_ACCESS WHERE APPT_STATUS = 'Arrived'
-     AND APPT_DTTM BETWEEN TO_DATE('{date_1} 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
-				AND TO_DATE('{date_2} 23:59:59', 'YYYY-MM-DD HH24:MI:SS') ")
-                                    
-                                    
-                              
+utilization_query_scheduled <- glue("SELECT a.DEPARTMENT_ID, a.RESOURCES, a.PROVIDER, a.VISIT_METHOD, a.APPT_DATE_YEAR, a.APPT_MONTH_YEAR, a.APPT_YEAR, a.APPT_WEEK, a.APPT_DAY, a.HOLIDAY, a.APPT_DUR, a.APPT_DTTM, a.APPT_STATUS, a.MRN, a.VISIT_END_DTTM, a.ROOMIN_DTTM
+    FROM AMBULATORY_ACCESS a
+    WHERE APPT_STATUS = 'Arrived' AND APPT_DTTM BETWEEN TO_DATE('{date_1} 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
+            AND TO_DATE('{date_2} 23:59:59', 'YYYY-MM-DD HH24:MI:SS')")
+
 
 utilization_data_raw <- dbGetQuery(conn, utilization_query_scheduled)
-data.hour.scheduled <- utilization_data_raw %>% select(-VISIT_END_DTTM, -ROOMIN_DTTM)
+data.hour.scheduled <- utilization_data_raw %>% select(-VISIT_END_DTTM, -ROOMIN_DTTM) %>% filter(APPT_STATUS == "Arrived")
 # data.hour.scheduled.save <- data.hour.scheduled
 data.hour.scheduled <- data.hour.scheduled %>% mutate(Appt.Start = as.POSIXct(APPT_DTTM, format = "%H:%M"))
 data.hour.scheduled <- data.hour.scheduled %>% mutate(Appt.End = as.POSIXct(Appt.Start + APPT_DUR*60, format = "%H:%M"))
 data.hour.scheduled <- data.hour.scheduled %>% mutate(Appt.Date = as.Date(APPT_DTTM))
-
-
 
 
 
@@ -55,11 +51,11 @@ data.hour.scheduled[, hours] <- NA
 
 
 
-data.hour.scheduled <- data.hour.scheduled %>% pivot_longer(all_of(hours), names_to = "hour", values_to = "min") %>% mutate(hour = as.numeric(hour))
+data.hour.scheduled <- data.hour.scheduled %>% pivot_longer(hours, names_to = "hour", values_to = "min") %>% mutate(hour = as.numeric(hour))
 
 
-data.hour.scheduled <- data.hour.scheduled %>% group_by(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.Start) <= hour)
-data.hour.scheduled <- data.hour.scheduled %>% group_by(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.End) >= hour)
+data.hour.scheduled <- data.hour.scheduled %>% group_by(DEPARTMENT_ID, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.Start) <= hour)
+data.hour.scheduled <- data.hour.scheduled %>% group_by(DEPARTMENT_ID, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.End) >= hour)
 
 suppressWarnings(
   data.hour.scheduled <- data.hour.scheduled %>% 
@@ -107,10 +103,10 @@ if(length(col_index) >= 1) {
 
 
 
-data.hour.scheduled <- data.hour.scheduled[,c(names(data.hour.scheduled[,1:19]), timeOptionsHr) ]
+data.hour.scheduled <- data.hour.scheduled[,c(names(data.hour.scheduled[,1:17]), timeOptionsHr) ]
 
 
-data.hour.scheduled <- data.hour.scheduled %>% select(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR,                                                      Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, all_of(timeOptionsHr)) 
+data.hour.scheduled <- data.hour.scheduled %>% select(DEPARTMENT_ID, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR,              APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, all_of(timeOptionsHr)) 
 
 
 data.hour.scheduled$sum <- rowSums(data.hour.scheduled[,which(colnames(data.hour.scheduled)=="00:00"):                          which(colnames(data.hour.scheduled) =="23:00")], na.rm = T)
@@ -132,22 +128,15 @@ data.hour.arrived  <- data.hour.arrived  %>% mutate(Appt.Start = floor_date(ROOM
                                                     Appt.End = floor_date( VISIT_END_DTTM, unit = "mins"))
 
 
-# data.hour.arrived  <- data.hour.arrived  %>% mutate(actual.visit.dur = round(difftime(VISIT_END_DTTM, ROOMIN_DTTM, units = "mins")))
-# 
-# ########### Analysis of % of visits with actual visit start and end times ############
-# data.hour.arrived  <- data.hour.arrived  %>% mutate(Appt.Start = format(strptime(as.ITime(ROOMIN_DTTM), "%H:%M:%S"),'%H:%M:%S'))
-# data.hour.arrived  <- data.hour.arrived  %>% mutate(Appt.Start = as.POSIXct(Appt.Start, format = "%H:%M"))
-# data.hour.arrived  <- data.hour.arrived  %>% mutate(Appt.End = as.POSIXct(Appt.Start + actual.visit.dur, format = "%H:%M"))
-
 
 ##Fill new columns with NA
 data.hour.arrived[, hours] <- NA
 
-data.hour.arrived <- data.hour.arrived %>% pivot_longer(all_of(hours), names_to = "hour", values_to = "min") %>% mutate(hour = as.numeric(hour))
+data.hour.arrived <- data.hour.arrived %>% pivot_longer(hours, names_to = "hour", values_to = "min") %>% mutate(hour = as.numeric(hour))
 
 
-data.hour.arrived <- data.hour.arrived %>% group_by(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.Start) <= hour )
-data.hour.arrived <- data.hour.arrived %>% group_by(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.End) >= hour)
+data.hour.arrived <- data.hour.arrived %>% group_by(DEPARTMENT_ID, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.Start) <= hour)
+data.hour.arrived <- data.hour.arrived %>% group_by(DEPARTMENT_ID, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.End) >= hour)
 
 
 suppressWarnings(
@@ -163,13 +152,10 @@ suppressWarnings(
                                                         )
 )
 
-
 data.hour.arrived <- data.hour.arrived %>% mutate(min = ifelse(min == 0, NA, min))
 
 data.hour.arrived <- data.hour.arrived %>%  mutate(min= round(min, digits = 2))
 data.hour.arrived <- data.hour.arrived %>% filter(min <= 60 | is.na(min))
-
-
 
 ## Fix hours to be in the form of "01:00"
 data.hour.arrived <- data.hour.arrived %>%
@@ -177,10 +163,9 @@ data.hour.arrived <- data.hour.arrived %>%
              mutate(hour = paste0(hour, ":00"))
 
 
-
+# wide data
 data.hour.arrived <- data.hour.arrived %>% pivot_wider(names_from = "hour", values_from = "min")
                                                 
-
 
 ## Fix code so it adds columns if not available
 col_index <- which(!(timeOptionsHr %in% names(data.hour.arrived)))
@@ -195,11 +180,11 @@ if(length(col_index) >= 1){
 }
 
 
-data.hour.arrived <- data.hour.arrived[,c(names(data.hour.arrived[,1:20]), timeOptionsHr) ]
+data.hour.arrived <- data.hour.arrived[,c(names(data.hour.arrived[,1:18]), timeOptionsHr) ]
 
 
 
-data.hour.arrived <- data.hour.arrived %>% select(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM,VISIT_END_DTTM, ROOMIN_DTTM, APPT_STATUS, MRN, all_of(timeOptionsHr))
+data.hour.arrived <- data.hour.arrived %>% select(DEPARTMENT_ID, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM,VISIT_END_DTTM, ROOMIN_DTTM, APPT_STATUS, MRN, all_of(timeOptionsHr))
 
 
 
@@ -208,9 +193,6 @@ data.hour.arrived <- data.hour.arrived %>% mutate(actual= as.numeric(difftime(Ap
 data.hour.arrived <- data.hour.arrived %>% mutate(comparison = ifelse(sum == actual, 0, 1))
 data.hour.arrived <- data.hour.arrived %>% mutate(comparison = ifelse(is.na(comparison), "No Data", comparison))
 data.hour.arrived <- data.hour.arrived %>% filter(comparison != 1)
-
-
-
 
 
 # Combine Utilization Data
@@ -229,58 +211,54 @@ data.hour.arrived <- data.hour.arrived %>% select(-VISIT_END_DTTM, -ROOMIN_DTTM)
 
 utilization.data <- rbind(data.hour.scheduled, data.hour.arrived)
 
-utilization.data <- utilization.data %>% select(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, all_of(timeOptionsHr_filter))
-
+utilization.data <- utilization.data %>% select(DEPARTMENT_ID, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, all_of(timeOptionsHr_filter))
 
 
 
 TABLE_NAME <-  "utilization_table"
 
-# function to convert the record of data frame into statement
+# function to convert the record of data frame to into satement
 get_values <- function(x,table_name){
-  
-  CAMPUS <- x[1]
-  CAMPUS_SPECIALTY <- x[2]
-  DEPARTMENT <- x[3]
-  RESOURCES <- x[4]
-  PROVIDER <- x[5]
-  VISIT_METHOD <- x[6]
-  APPT_DATE_YEAR <- x[7]
-  APPT_MONTH_YEAR <- x[8]
-  APPT_YEAR <- x[9]
-  APPT_WEEK <- x[10]
-  APPT_DAY <- x[11]
-  HOLIDAY <- x[12]
-  APPT_DUR <- x[13]      
-  Appt.Start <- x[14]
-  Appt.End <- x[15]
-  APPT_DTTM <- x[16]
-  APPT_STATUS <- x[17]
-  MRN <-  x[18]
-  `07:00` <- x[19]
-  `08:00` <-  x[20]
-  `09:00` <-  x[21]
-  `10:00` <-  x[22]
-  `11:00` <-  x[23]
-  `12:00` <-  x[24]
-  `13:00` <-  x[25]
-  `14:00` <-  x[26]
-  `15:00` <-  x[27]
-  `16:00` <-  x[28]
-  `17:00` <-  x[29]
-  `18:00` <-  x[30]
-  `19:00` <-  x[31]
-  `20:00` <-  x[32]
+  DEPARTMENT_ID <- x$DEPARTMENT_ID
+  RESOURCES <- x$RESOURCES
+  PROVIDER <- x$PROVIDER
+  VISIT_METHOD <- x$VISIT_METHOD
+  APPT_DATE_YEAR <- x$APPT_DATE_YEAR
+  APPT_MONTH_YEAR <- x$APPT_MONTH_YEAR
+  APPT_YEAR <- x$APPT_YEAR
+  APPT_WEEK <- x$APPT_WEEK
+  APPT_DAY <- x$APPT_DAY
+  HOLIDAY <- x$HOLIDAY
+  APPT_DUR <- x$APPT_DUR     
+  Appt.Start <- x$Appt.Start
+  Appt.End <- x$Appt.End
+  APPT_DTTM <- x$APPT_DTTM
+  APPT_STATUS <- x$APPT_STATUS
+  MRN <-  x$MRN
+  `07:00` <- x$`07:00`
+  `08:00` <-  x$`08:00`
+  `09:00` <-  x$`09:00`
+  `10:00` <-  x$`10:00`
+  `11:00` <-  x$`11:00`
+  `12:00` <-  x$`12:00`
+  `13:00` <-  x$`13:00`
+  `14:00` <-  x$`14:00`
+  `15:00` <-  x$`15:00`
+  `16:00` <-  x$`16:00`
+  `17:00` <-  x$`17:00`
+  `18:00` <-  x$`18:00`
+  `19:00` <-  x$`19:00`
+  `20:00` <-  x$`20:00`
   
   
-  values <- glue("INTO \"{table_name}\"(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, 
+  values <- glue("INTO \"{table_name}\"DEPARTMENT_ID, 
                  RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, 
                  APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, 
                  APPT_DUR, Appt_Start, Appt_End, APPT_DTTM, APPT_STATUS, MRN,
                  H_07_00, H_08_00, H_09_00, H_10_00, H_11_00, H_12_00, H_13_00, 
                  H_14_00, H_15_00, H_16_00, H_17_00, H_18_00, H_19_00, H_20_00
                  )
-                 VALUES('{CAMPUS}', '{CAMPUS_SPECIALTY}', '{DEPARTMENT}', '{RESOURCES}','{PROVIDER}',
+                 VALUES('{DEPARTMENT_ID}', '{RESOURCES}','{PROVIDER}',
                  '{VISIT_METHOD}',  TO_DATE('{APPT_DATE_YEAR}', 'YYYY-MM-DD'),
                  '{APPT_MONTH_YEAR}', '{APPT_YEAR}', TO_DATE('{APPT_WEEK}', 'YYYY-MM-DD'), 
                  '{APPT_DAY}', '{HOLIDAY}', '{APPT_DUR}', TO_DATE('{Appt.Start}', 'YYYY-MM-DD HH24:MI:SS'), 
@@ -297,9 +275,7 @@ get_values <- function(x,table_name){
 
 # Add UPDATE_TIME and check for all the fields are characters
 utilization.data <- utilization.data %>%
-  mutate(CAMPUS = as.character(CAMPUS),
-         CAMPUS_SPECIALTY = as.character(CAMPUS_SPECIALTY),
-         DEPARTMENT = as.character(DEPARTMENT),
+  mutate(DEPARTMENT_ID = as.numeric(DEPARTMENT_ID),
          RESOURCES = as.character(RESOURCES), 
          PROVIDER = as.character(PROVIDER),
          VISIT_METHOD = as.character(VISIT_METHOD),
@@ -330,22 +306,20 @@ utilization.data <- utilization.data %>%
          `19:00`= as.numeric(`19:00`),
          `20:00`= as.numeric(`20:00`))%>%
   
-         select(CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, 
+         select(DEPARTMENT_ID, RESOURCES, PROVIDER, 
          VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, 
          APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, 
          APPT_STATUS, MRN, `07:00`,`08:00`,`09:00`, `10:00`,`11:00`,`12:00`,
          `13:00`, `14:00`,`15:00`,`16:00`,`17:00`,`18:00`,`19:00`,`20:00`)
 
-special_character_columns <- c("CAMPUS", "CAMPUS_SPECIALTY", "DEPARTMENT", "RESOURCES", "PROVIDER", "VISIT_METHOD", "APPT_STATUS")
+special_character_columns <- c("RESOURCES", "PROVIDER", "VISIT_METHOD", "APPT_STATUS")
 utilization.data <- utilization.data %>% mutate_at(all_of(special_character_columns), ~ str_replace(., "'", "''"))
-
-
 
 
 # Convert the each record/row of tibble to INTO clause of insert statment
 inserts <- lapply(
   lapply(
-    lapply(split(utilization.data, 
+    lapply(split(utilization.data  , 
                  1:nrow(utilization.data )),
            as.list), 
     as.character),
@@ -356,25 +330,6 @@ r <- 0
 chunk_length <- 1000
 split_queries <- split(inserts, ceiling(seq_along(inserts) / chunk_length))
 
-# # conn <- dbConnect(odbc(), "OAO Cloud DB")
-# for (i in 1:length(split_queries)) {
-#   row <- glue_collapse(split_queries[[i]], sep = "\n\n")
-#   row <- gsub('NA', "", row)
-#   row <- gsub("&", " ' || chr(38) || ' ", row)
-#   sql <- glue('INSERT ALL {row} SELECT 1 FROM DUAL;')
-#     tryCatch({
-#       dbBegin(conn)
-#       dbExecute(conn, sql)
-#       dbCommit(conn)
-#       r <- r+1
-#     },
-#     error = function(err){
-#       print(r)
-#       dbRollback(conn)
-#       dbDisconnect(conn)
-# 
-#     })
-# }
 
 
 split_queries_test <- list()
@@ -407,3 +362,4 @@ system.time(
 registerDoSEQ()
 
 ```
+
