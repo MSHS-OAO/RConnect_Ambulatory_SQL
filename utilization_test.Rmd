@@ -254,7 +254,7 @@ get_values <- function(x,table_name){
 
   
   
-  values <- glue("INTO \"{table_name}\"DEPARTMENT_ID, 
+  values <- glue("INTO \"{table_name}\" (DEPARTMENT_ID, 
                  RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, 
                  APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, 
                  APPT_DUR, Appt_Start, Appt_End, APPT_DTTM, APPT_STATUS, MRN,
@@ -329,7 +329,7 @@ inserts <- lapply(
   FUN = get_values ,TABLE_NAME)
 
 
-r <- 0
+
 chunk_length <- 1000
 split_queries <- split(inserts, ceiling(seq_along(inserts) / chunk_length))
 
