@@ -21,8 +21,8 @@ library(doParallel)
 
 conn <- dbConnect(odbc(), "OAO Cloud DB")
 
-date_1 <- Sys.Date() - 5
-date_2 <- Sys.Date() - 5
+date_1 <- "2021-01-01"
+date_2 <- Sys.Date() - 1
 
 utilization_query_scheduled <- glue("SELECT a.DEPARTMENT_ID, a.RESOURCES, a.PROVIDER, a.VISIT_METHOD, a.APPT_DATE_YEAR, a.APPT_MONTH_YEAR, a.APPT_YEAR, a.APPT_WEEK, a.APPT_DAY, a.HOLIDAY, a.APPT_DUR, a.APPT_DTTM, a.APPT_STATUS, a.MRN, a.VISIT_END_DTTM, a.ROOMIN_DTTM
     FROM AMBULATORY_ACCESS a
