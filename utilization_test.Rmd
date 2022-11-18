@@ -21,7 +21,7 @@ library(doParallel)
 
 conn <- dbConnect(odbc(), "OAO Cloud DB")
 
-for (j in 4:686) {
+for (j in 24:686) {
   # date_1 <- "2022-01-01"
   date_1 <- Sys.Date() - j
   date_2 <- Sys.Date() - j
@@ -78,6 +78,19 @@ for (j in 4:686) {
       mutate(hour= str_pad(hour, width = nchar("xx"), pad = "0", side = "left")) %>%
                mutate(hour = paste0(hour, ":00"))
   
+  
+  
+  
+  
+  
+  data.hour.scheduled <- 
+                data.hour.scheduled %>%
+                dplyr::group_by(DEPARTMENT_ID, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS, MRN, APPT_TYPE, Appt.Start, Appt.End, Appt.Date, hour) %>%
+                dplyr::mutate(n = dplyr::n()) %>%
+                filter(n <=1) %>%
+                  select(-n) %>%
+                ungroup()
+    
   
   
   ##Pviot data on hour 
@@ -165,6 +178,15 @@ for (j in 4:686) {
                mutate(hour = paste0(hour, ":00"))
   
   
+  
+    data.hour.arrived <- 
+                data.hour.arrived %>%
+                dplyr::group_by(DEPARTMENT_ID, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS, MRN, APPT_TYPE, Appt.Start, Appt.End, hour) %>%
+                dplyr::mutate(n = dplyr::n()) %>%
+                filter(n >=1) %>%
+                  select(-n)%>%
+                ungroup()
+                
   # wide data
   data.hour.arrived <- data.hour.arrived %>% pivot_wider(names_from = "hour", values_from = "min")
                                                   
