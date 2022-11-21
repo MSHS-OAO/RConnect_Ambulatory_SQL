@@ -24,8 +24,8 @@ start_date <- Sys.Date() - 1
 
 #for (j in 1:686) {
   # date_1 <- "2022-01-01"
-  date_1 <- start_date 
-  date_2 <- start_date - 7
+  date_1 <- start_date -7
+  date_2 <- start_date
 
   # date_1 <- "2022-11-10"
   # date_2 <- "2022-11-17"
