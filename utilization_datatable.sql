@@ -36,3 +36,5 @@ CREATE TABLE "utilization_table"
   
 ,CONSTRAINT utilization_pk PRIMARY KEY (DEPARTMENT_ID, PROVIDER, MRN, APPT_DTTM, UTIL_TYPE)
 );
+
+create index utilization_index on "utilization_table" ( RESOURCES, PROVIDER, VISIT_METHOD, APPT_TYPE, APPT_DATE_YEAR, APPT_DAY, UTIL_TYPE );
