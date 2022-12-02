@@ -47,7 +47,7 @@ reg_exp <- "\\[(.*?)\\]"
 access_query <- glue("CREATE TABLE AMBULATORY_ACCESS_TABLE AS
 SELECT c.*
     FROM(
-     SELECT i.CAMPUS, i.CAMPUS_SECIALTY. i.DEPARTMENT,d.*, b.holiday, f.DAYS_SUBTRACT, h.APPT_SOURCE_NEW AS APPT_SOURCE_MAP 
+     SELECT i.CAMPUS, i.CAMPUS_SPECIALTY, i.DEPARTMENT,d.*, b.holiday, f.DAYS_SUBTRACT, h.APPT_SOURCE_NEW AS APPT_SOURCE_MAP 
     FROM(
  SELECT a.PROV_NAME_WID, a.DEPARTMENT_ID AS Department_ID, a.REFERRING_PROV_NAME_WID AS Refferring_Provider,
                              a.MRN, a.PAT_NAME AS Patient_Name, a.ZIP_CODE, a.BIRTH_DATE, a.FINCLASS AS Coverage,
