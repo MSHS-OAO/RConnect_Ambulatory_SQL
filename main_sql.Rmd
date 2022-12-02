@@ -47,9 +47,9 @@ reg_exp <- "\\[(.*?)\\]"
 access_query <- glue("CREATE TABLE AMBULATORY_ACCESS_TABLE AS
 SELECT c.*
     FROM(
-     SELECT d.*, b.holiday, f.DAYS_SUBTRACT, h.APPT_SOURCE_NEW AS APPT_SOURCE_MAP
+     SELECT i.CAMPUS, i.CAMPUS_SECIALTY. i.DEPARTMENT,d.*, b.holiday, f.DAYS_SUBTRACT, h.APPT_SOURCE_NEW AS APPT_SOURCE_MAP 
     FROM(
- SELECT a.DEP_RPT_GRP_SEVENTEEN AS Campus, a.DEPT_SPECIALTY_NAME AS Campus_Specialty, a.DEPARTMENT_NAME AS Department, a.PROV_NAME_WID, a.DEPARTMENT_ID AS Department_ID, a.REFERRING_PROV_NAME_WID AS Refferring_Provider,
+ SELECT a.PROV_NAME_WID, a.DEPARTMENT_ID AS Department_ID, a.REFERRING_PROV_NAME_WID AS Refferring_Provider,
                              a.MRN, a.PAT_NAME AS Patient_Name, a.ZIP_CODE, a.BIRTH_DATE, a.FINCLASS AS Coverage,
                              a.APPT_MADE_DTTM, a.APPT_DTTM, a.PRC_NAME AS APPT_TYPE, a.APPT_LENGTH AS APPT_DUR, a.DERIVED_STATUS_DESC AS APPT_STATUS,
                              a.APPT_CANC_DTTM AS APPT_CANCEL_DTTM, a.CANCEL_REASON_NAME AS CANCEL_REASON,
@@ -74,6 +74,7 @@ FROM MV_DM_PATIENT_ACCESS a
                     LEFT JOIN holidays b on d.Appt_Date_Year = b.dates
                     LEFT JOIN SUBTRACT_DAYS f on d.APPT_DAY = f.WEEKDAY
                     LEFT JOIN AMBULATORY_APPT_SOURCE h on d.APPT_SOURCE = h.APPT_SOURCE
+                    LEFT JOIN AMBULATORY_MAPPING i on d.DEPARTMENT_ID = i.DEPARTMENT_ID
                     ) c")
 access_index <- glue("CREATE index filter_index on AMBULATORY_ACCESS_TABLE (CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_TYPE, APPT_DTTM, APPT_DAY)")
 
