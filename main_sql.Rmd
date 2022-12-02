@@ -11,11 +11,38 @@ library(tidyverse)
 library(DBI)
 library(pool)
 
+ambulatory_mapping_drop <- glue("DROP TABLE AMBULATORY_MAPPING")
+ambulatory_mapping_query <- glue("CREATE TABLE AMBULATORY_MAPPING AS
+SELECT b.CAMPUS, b.CAMPUS_SPECIALTY, b.DEPARTMENT_OLD, b.DEPARTMENT, b.DEPARTMENT_ID, d.LAST_ARRIVED
+FROM(
+SELECT a.*, regexp_replace(DEPARTMENT_OLD,'_DEACTIVATED|X_','') AS DEPARTMENT
+FROM(
+    SELECT distinct DEP_RPT_GRP_SEVENTEEN  AS CAMPUS, DEPT_SPECIALTY_NAME  AS CAMPUS_SPECIALTY, DEPARTMENT_NAME AS DEPARTMENT_OLD, DEPARTMENT_ID
+    FROM MV_DM_PATIENT_ACCESS where DERIVED_STATUS_DESC = 'Arrived' AND
+    CONTACT_DATE BETWEEN TO_DATE('2021-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
+            AND TO_DATE(current_date - 1)
+    ) a
+   ) b 
+    LEFT JOIN
+    (SELECT c.*
+       FROM(
+          SELECT DEPARTMENT_ID, max(APPT_DTTM) as LAST_ARRIVED
+          FROM MV_DM_PATIENT_ACCESS where DERIVED_STATUS_DESC = 'Arrived' AND 
+          CONTACT_DATE BETWEEN TO_DATE('2021-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
+            AND TO_DATE(current_date - 1)
+          GROUP BY DEPARTMENT_ID
+          ) c
+          ) d
+          on b.DEPARTMENT_ID= d.DEPARTMENT_ID")
+
+ambulatory_mapping_index <- glue("CREATE index amb_mapping_index on AMBULATORY_ACCESS_TABLE (CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, DEPARTMENT_ID)")
+
 drop_access_query <- glue("DROP TABLE AMBULATORY_ACCESS_TABLE")
 
 date_1 <- "2021-01-01"
 date_2 <- Sys.Date() - 1
 reg_exp <- "\\[(.*?)\\]"
+
 
 access_query <- glue("CREATE TABLE AMBULATORY_ACCESS_TABLE AS
 SELECT c.*
