@@ -35,7 +35,7 @@ FROM(
           ) d
           on b.DEPARTMENT_ID= d.DEPARTMENT_ID")
 
-ambulatory_mapping_index <- glue("CREATE index amb_mapping_index on AMBULATORY_ACCESS_TABLE (CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, DEPARTMENT_ID)")
+ambulatory_mapping_index <- glue("CREATE index amb_mapping_index on AMBULATORY_MAPPING (CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, DEPARTMENT_ID)")
 
 drop_access_query <- glue("DROP TABLE AMBULATORY_ACCESS_TABLE")
 
