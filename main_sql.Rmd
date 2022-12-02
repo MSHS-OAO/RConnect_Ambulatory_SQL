@@ -163,6 +163,12 @@ WHERE g.ZIP_CODE_LAYER_A is NOT NULL")
   tryCatch({
         conn <- dbConnect(drv = odbc(), "OAO Cloud DB", timeout = 30)
         dbBegin(conn)
+            if(dbExistsTable(conn, "AMBULATORY_MAPPING")){
+          dbExecute(conn, ambulatory_mapping_drop) 
+            }
+        dbExecute(conn, ambulatory_mapping_query)
+        dbExecute(conn, ambulatory_mapping_index)
+        
         if(dbExistsTable(conn, "AMBULATORY_ACCESS_TABLE")){
           dbExecute(conn, drop_access_query) 
         }
