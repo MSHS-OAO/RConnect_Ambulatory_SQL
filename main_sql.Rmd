@@ -77,7 +77,7 @@ FROM MV_DM_PATIENT_ACCESS a
                     LEFT JOIN AMBULATORY_MAPPING i on d.DEPARTMENT_ID = i.DEPARTMENT_ID
                     ) c")
 access_index <- glue("CREATE index filter_index on AMBULATORY_ACCESS_TABLE (CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_TYPE, APPT_DTTM, APPT_DAY)")
-appt_status_index <- glue("CREATE index filter_index on AMBULATORY_ACCESS_TABLE (APPT_STATUS)")
+appt_status_index <- glue("CREATE index status_index on AMBULATORY_ACCESS_TABLE (APPT_STATUS)")
 
 
 drop_ambulatory_filters_query <- glue("DROP TABLE AMBULATORY_FILTERS")
