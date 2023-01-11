@@ -36,6 +36,7 @@ FROM(
           on b.DEPARTMENT_ID= d.DEPARTMENT_ID")
 
 ambulatory_mapping_index <- glue("CREATE index amb_mapping_index on AMBULATORY_MAPPING (CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, DEPARTMENT_ID)")
+ambulatory_mapping_grant <- glue("GRANT SELECT on AMBULATORY_MAPPING to kweons01")
 
 drop_access_query <- glue("DROP TABLE AMBULATORY_ACCESS_TABLE")
 
@@ -170,6 +171,7 @@ WHERE g.ZIP_CODE_LAYER_A is NOT NULL")
             }
         dbExecute(conn, ambulatory_mapping_query)
         dbExecute(conn, ambulatory_mapping_index)
+        dbExecute(conn, ambulatory_mapping_grant)
         
         if(dbExistsTable(conn, "AMBULATORY_ACCESS_TABLE")){
           dbExecute(conn, drop_access_query) 
