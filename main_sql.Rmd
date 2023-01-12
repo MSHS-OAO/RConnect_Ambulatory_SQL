@@ -11,6 +11,10 @@ library(tidyverse)
 library(DBI)
 library(pool)
 
+date_1 <- "2021-01-01"
+date_2 <- Sys.Date() - 1
+reg_exp <- "\\[(.*?)\\]"
+
 ambulatory_mapping_drop <- glue("DROP TABLE AMBULATORY_MAPPING")
 ambulatory_mapping_query <- glue("CREATE TABLE AMBULATORY_MAPPING AS
 SELECT b.CAMPUS, b.CAMPUS_SPECIALTY, b.DEPARTMENT_OLD, b.DEPARTMENT, b.DEPARTMENT_ID, d.LAST_ARRIVED
@@ -38,12 +42,14 @@ FROM(
 ambulatory_mapping_index <- glue("CREATE index amb_mapping_index on AMBULATORY_MAPPING (CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, DEPARTMENT_ID)")
 ambulatory_mapping_grant <- glue("GRANT SELECT on AMBULATORY_MAPPING to kweons01")
 
+ambulatory_provider_mapping <- glue("CREATE TABLE AMBULATORY_PROVIDER_MAPPING AS
+SELECT distinct TRIM(TRAILING FROM REGEXP_REPLACE(PROV_NAME_WID, '{reg_exp}', '')) AS Provider, PROV_ID FROM MV_DM_PATIENT_ACCESS
+WHERE CONTACT_DATE BETWEEN TO_DATE('2021-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
+            AND TO_DATE(current_date - 1)")
+            
+drop_ambulatory_provider_mapping <- glue("DROP TABLE AMBULATORY_PROVIDER_MAPPING")
+
 drop_access_query <- glue("DROP TABLE AMBULATORY_ACCESS_TABLE")
-
-date_1 <- "2021-01-01"
-date_2 <- Sys.Date() - 1
-reg_exp <- "\\[(.*?)\\]"
-
 
 access_query <- glue("CREATE TABLE AMBULATORY_ACCESS_TABLE AS
 SELECT c.*
@@ -172,6 +178,12 @@ WHERE g.ZIP_CODE_LAYER_A is NOT NULL")
         dbExecute(conn, ambulatory_mapping_query)
         dbExecute(conn, ambulatory_mapping_index)
         dbExecute(conn, ambulatory_mapping_grant)
+        
+        if(dbExistsTable(conn, "AMBULATORY_PROVIDER_MAPPING")){
+          dbExecute(conn, drop_ambulatory_provider_mapping) 
+         }
+         dbExecute(conn, ambulatory_provider_mapping)
+
         
         if(dbExistsTable(conn, "AMBULATORY_ACCESS_TABLE")){
           dbExecute(conn, drop_access_query) 
