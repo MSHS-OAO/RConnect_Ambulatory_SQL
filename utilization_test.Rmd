@@ -22,15 +22,15 @@ library(doParallel)
 conn <- dbConnect(odbc(), "OAO Cloud DB")
 start_date <- Sys.Date() - 1
 
-#for (j in 1:686) {
+#for (j in 1:741) {
   # date_1 <- "2022-01-01"
   date_1 <- start_date -7
   date_2 <- start_date
 
-  # date_1 <- "2022-11-10"
-  # date_2 <- "2022-11-17"
+   # date_1 <- start_date - j
+   # date_2 <- start_date - j
   
-  utilization_query_scheduled <- glue("SELECT a.DEPARTMENT_ID, a.RESOURCES, a.PROVIDER, a.VISIT_METHOD, a.APPT_DATE_YEAR, a.APPT_MONTH_YEAR, a.APPT_YEAR, a.APPT_WEEK, a.APPT_DAY, a.HOLIDAY, a.APPT_DUR, a.APPT_DTTM, a.APPT_STATUS, a.MRN, a.VISIT_END_DTTM, a.ROOMIN_DTTM, a.APPT_TYPE
+  utilization_query_scheduled <- glue("SELECT a.DEPARTMENT_ID, a.RESOURCES, a.PROV_ID, a.VISIT_METHOD, a.APPT_DATE_YEAR, a.APPT_MONTH_YEAR, a.APPT_YEAR, a.APPT_WEEK, a.APPT_DAY, a.HOLIDAY, a.APPT_DUR, a.APPT_DTTM, a.APPT_STATUS, a.MRN, a.VISIT_END_DTTM, a.ROOMIN_DTTM, a.APPT_TYPE
       FROM AMBULATORY_ACCESS a
       WHERE APPT_STATUS = 'Arrived' AND APPT_DTTM BETWEEN TO_DATE('{date_1} 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
               AND TO_DATE('{date_2} 23:59:59', 'YYYY-MM-DD HH24:MI:SS')")
@@ -60,8 +60,8 @@ start_date <- Sys.Date() - 1
   data.hour.scheduled <- data.hour.scheduled %>% pivot_longer(hours, names_to = "hour", values_to = "min") %>% mutate(hour = as.numeric(hour))
   
   
-  data.hour.scheduled <- data.hour.scheduled %>% group_by(DEPARTMENT_ID, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.Start) <= hour)
-  data.hour.scheduled <- data.hour.scheduled %>% group_by(DEPARTMENT_ID, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.End) >= hour)
+  data.hour.scheduled <- data.hour.scheduled %>% group_by(DEPARTMENT_ID, PROV_ID, MRN, APPT_DTTM) %>% filter(hour(Appt.Start) <= hour)
+  data.hour.scheduled <- data.hour.scheduled %>% group_by(DEPARTMENT_ID, PROV_ID, MRN, APPT_DTTM) %>% filter(hour(Appt.End) >= hour)
   
   suppressWarnings(
     data.hour.scheduled <- data.hour.scheduled %>% 
@@ -89,7 +89,7 @@ start_date <- Sys.Date() - 1
   
   data.hour.scheduled <- 
                 data.hour.scheduled %>%
-                dplyr::group_by(DEPARTMENT_ID, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS, MRN, APPT_TYPE, Appt.Start, Appt.End, Appt.Date, hour) %>%
+                dplyr::group_by(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS, MRN, APPT_TYPE, Appt.Start, Appt.End, Appt.Date, hour) %>%
                 dplyr::mutate(n = dplyr::n()) %>%
                 filter(n <=1) %>%
                   select(-n) %>%
@@ -125,7 +125,7 @@ start_date <- Sys.Date() - 1
   data.hour.scheduled <- data.hour.scheduled[,c(names(data.hour.scheduled[,1:18]), timeOptionsHr) ]
   
   
-  data.hour.scheduled <- data.hour.scheduled %>% select(DEPARTMENT_ID, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, APPT_TYPE, all_of(timeOptionsHr)) 
+  data.hour.scheduled <- data.hour.scheduled %>% select(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, APPT_TYPE, all_of(timeOptionsHr)) 
   
   
   data.hour.scheduled$sum <- rowSums(data.hour.scheduled[,which(colnames(data.hour.scheduled)=="00:00"):                          which(colnames(data.hour.scheduled) =="23:00")], na.rm = T)
@@ -154,8 +154,8 @@ start_date <- Sys.Date() - 1
   data.hour.arrived <- data.hour.arrived %>% pivot_longer(hours, names_to = "hour", values_to = "min") %>% mutate(hour = as.numeric(hour))
   
   
-  data.hour.arrived <- data.hour.arrived %>% group_by(DEPARTMENT_ID, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.Start) <= hour)
-  data.hour.arrived <- data.hour.arrived %>% group_by(DEPARTMENT_ID, PROVIDER, MRN, APPT_DTTM) %>% filter(hour(Appt.End) >= hour)
+  data.hour.arrived <- data.hour.arrived %>% group_by(DEPARTMENT_ID, PROV_ID, MRN, APPT_DTTM) %>% filter(hour(Appt.Start) <= hour)
+  data.hour.arrived <- data.hour.arrived %>% group_by(DEPARTMENT_ID, PROV_ID, MRN, APPT_DTTM) %>% filter(hour(Appt.End) >= hour)
   
   
   suppressWarnings(
@@ -185,7 +185,7 @@ start_date <- Sys.Date() - 1
   
     data.hour.arrived <- 
                 data.hour.arrived %>%
-                dplyr::group_by(DEPARTMENT_ID, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS, MRN, APPT_TYPE, Appt.Start, Appt.End, hour) %>%
+                dplyr::group_by(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, APPT_DTTM, APPT_STATUS, MRN, APPT_TYPE, Appt.Start, Appt.End, hour) %>%
                 dplyr::mutate(n = dplyr::n()) %>%
                 filter(n >=1) %>%
                   select(-n)%>%
@@ -212,7 +212,7 @@ start_date <- Sys.Date() - 1
   
   
   
-  data.hour.arrived <- data.hour.arrived %>% select(DEPARTMENT_ID, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM,VISIT_END_DTTM, ROOMIN_DTTM, APPT_STATUS, MRN, APPT_TYPE, all_of(timeOptionsHr))
+  data.hour.arrived <- data.hour.arrived %>% select(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM,VISIT_END_DTTM, ROOMIN_DTTM, APPT_STATUS, MRN, APPT_TYPE, all_of(timeOptionsHr))
   
   
   
@@ -239,7 +239,7 @@ start_date <- Sys.Date() - 1
   
   utilization.data <- rbind(data.hour.scheduled, data.hour.arrived)
   
-  utilization.data <- utilization.data %>% select(DEPARTMENT_ID, RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, sum, util_type, APPT_TYPE, all_of(timeOptionsHr_filter))
+  utilization.data <- utilization.data %>% select(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, sum, util_type, APPT_TYPE, all_of(timeOptionsHr_filter))
   
   
   
@@ -250,7 +250,7 @@ start_date <- Sys.Date() - 1
     
     DEPARTMENT_ID <- x[1]
     RESOURCES <- x[2]
-    PROVIDER <- x[3]
+    PROV_ID <- x[3]
     VISIT_METHOD <- x[4]
     APPT_DATE_YEAR <- x[5]
     APPT_MONTH_YEAR <- x[6]
@@ -286,13 +286,13 @@ start_date <- Sys.Date() - 1
     
     
     values <- glue("INTO \"{table_name}\" (DEPARTMENT_ID, 
-                   RESOURCES, PROVIDER, VISIT_METHOD, APPT_DATE_YEAR, 
+                   RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, 
                    APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, 
                    APPT_DUR, Appt_Start, Appt_End, APPT_DTTM, APPT_STATUS, MRN, SUM, util_type, APPT_TYPE,
                    H_07_00, H_08_00, H_09_00, H_10_00, H_11_00, H_12_00, H_13_00, 
                    H_14_00, H_15_00, H_16_00, H_17_00, H_18_00, H_19_00, H_20_00
                    )
-                   VALUES('{DEPARTMENT_ID}', '{RESOURCES}','{PROVIDER}',
+                   VALUES('{DEPARTMENT_ID}', '{RESOURCES}','{PROV_ID}',
                    '{VISIT_METHOD}',  TO_DATE('{APPT_DATE_YEAR}', 'YYYY-MM-DD'),
                    '{APPT_MONTH_YEAR}', '{APPT_YEAR}', TO_DATE('{APPT_WEEK}', 'YYYY-MM-DD'), 
                    '{APPT_DAY}', '{HOLIDAY}', '{APPT_DUR}', TO_DATE('{Appt.Start}', 'YYYY-MM-DD HH24:MI:SS'), 
@@ -311,7 +311,7 @@ start_date <- Sys.Date() - 1
   utilization.data <- utilization.data %>%
     mutate(DEPARTMENT_ID = as.numeric(DEPARTMENT_ID),
            RESOURCES = as.character(RESOURCES), 
-           PROVIDER = as.character(PROVIDER),
+           PROV_ID = as.character(PROV_ID),
            VISIT_METHOD = as.character(VISIT_METHOD),
            APPT_DATE_YEAR = as.character(APPT_DATE_YEAR), 
            APPT_MONTH_YEAR = as.character(APPT_MONTH_YEAR),
@@ -343,13 +343,13 @@ start_date <- Sys.Date() - 1
            `19:00`= as.numeric(`19:00`),
            `20:00`= as.numeric(`20:00`))%>%
     
-           select(DEPARTMENT_ID, RESOURCES, PROVIDER, 
+           select(DEPARTMENT_ID, RESOURCES, PROV_ID, 
            VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, 
            APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, 
            APPT_STATUS, MRN,sum, util_type, APPT_TYPE, `07:00`,`08:00`,`09:00`, `10:00`,`11:00`,`12:00`,
            `13:00`, `14:00`,`15:00`,`16:00`,`17:00`,`18:00`,`19:00`,`20:00`)
   
-  special_character_columns <- c("RESOURCES", "PROVIDER", "VISIT_METHOD", "APPT_STATUS", "APPT_TYPE")
+  special_character_columns <- c("RESOURCES", "VISIT_METHOD", "APPT_STATUS", "APPT_TYPE")
   utilization.data <- utilization.data %>% mutate_at(all_of(special_character_columns), ~ str_replace(., "'", "''"))
   
   
@@ -412,6 +412,7 @@ start_date <- Sys.Date() - 1
   }
   )
   registerDoSEQ()
+#  print(j)
 #}
 
 ```
