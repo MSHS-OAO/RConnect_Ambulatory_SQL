@@ -37,6 +37,7 @@ start_date <- Sys.Date() - 1
   
   
   utilization_data_raw <- dbGetQuery(conn, utilization_query_scheduled)
+  utilization_data_raw <- utilization_data_raw %>% distinct()
   data.hour.scheduled <- utilization_data_raw %>% select(-VISIT_END_DTTM, -ROOMIN_DTTM) %>% filter(APPT_STATUS == "Arrived")
   # data.hour.scheduled.save <- data.hour.scheduled
   data.hour.scheduled <- data.hour.scheduled %>% mutate(Appt.Start = as.POSIXct(APPT_DTTM, format = "%H:%M"))
