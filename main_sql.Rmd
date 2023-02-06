@@ -156,12 +156,13 @@ SELECT a.*,
  SUBSTR(a.ZIP_CODE, 1, 5) AS NEW_ZIP 
 FROM AMBULATORY_ACCESS a 
     ) b
-    INNER JOIN ZIP_CODE_LAYER c ON b.NEW_ZIP = c.ZIP_CODE AND b.APPT_STATUS = 'Arrived'
-    INNER JOIN ZIP_CITY_STATE d ON b.NEW_ZIP = d.ZIP
+    LEFT JOIN ZIP_CODE_LAYER c ON b.NEW_ZIP = c.ZIP_CODE AND b.APPT_STATUS = 'Arrived'
+    LEFT JOIN ZIP_CITY_STATE d ON b.NEW_ZIP = d.ZIP
        ) e
        
        )g
 WHERE g.ZIP_CODE_LAYER_A is NOT NULL")
+population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
 
 
 
@@ -203,6 +204,7 @@ WHERE g.ZIP_CODE_LAYER_A is NOT NULL")
           dbExecute(conn, drop_population_query)
         }
         dbExecute(conn, population_query)
+        dbExecute(conn, population_grant)
         
         dbCommit(conn)
         dbDisconnect(conn)
