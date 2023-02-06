@@ -160,8 +160,7 @@ FROM AMBULATORY_ACCESS a
     LEFT JOIN ZIP_CITY_STATE d ON b.NEW_ZIP = d.ZIP
        ) e
        
-       )g
-WHERE g.ZIP_CODE_LAYER_A is NOT NULL")
+       )g")
 population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
 
 
