@@ -157,7 +157,7 @@ SELECT a.*,
 FROM AMBULATORY_ACCESS a 
     ) b
     LEFT JOIN ZIP_CODE_LAYER c ON b.NEW_ZIP = c.ZIP_CODE AND b.APPT_STATUS = 'Arrived'
-    LEFT JOIN ZIP_CITY_STATE d ON b.NEW_ZIP = d.ZIP
+    LEFT JOIN ZIP_CITY_STATE d ON b.NEW_ZIP = d.ZIP AND b.APPT_STATUS = 'Arrived'
        ) e
        
        )g")
