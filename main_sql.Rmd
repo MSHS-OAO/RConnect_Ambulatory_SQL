@@ -123,6 +123,8 @@ FROM (
                         ) b
     LEFT JOIN AMBULATORY_MAPPING c on b.DEPARTMENT_ID = c.DEPARTMENT_ID  
     LEFT JOIN SUBTRACT_DAYS f on b.APPT_DAY = f.WEEKDAY")
+    
+    slot_index <- glue("CREATE index slot_index on AMBULATORY_SLOT (DEPARTMENT_NAME, APPT_DATE_YEAR, CAMPUS_SPECIALTY)")
 
 
 
@@ -201,6 +203,8 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
           dbExecute(conn, drop_slot_query)
         }
         dbExecute(conn, slot_query)
+        dbExecute(conn, slot_index)
+
         
         if(dbExistsTable(conn, "AMBULATORY_POPULATION")){
           dbExecute(conn, drop_population_query)
