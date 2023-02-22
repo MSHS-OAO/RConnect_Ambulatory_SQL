@@ -218,6 +218,91 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
 
 #source("utilization.R")
 
+access_summary_drop <- glue("DROP TABLE AMBULATORY_ACCESS_SUMMARY_TABLE")
+access_summary_query <- glue("CREATE TABLE AMBULATORY_ACCESS_SUMMARY_TABLE AS
+SELECT
+    CAMPUS,
+    CAMPUS_SPECIALTY,
+    DEPARTMENT,
+    RESOURCES,
+    VISIT_METHOD,
+    APPT_DATE_YEAR,
+    APPT_STATUS,
+    PROVIDER,
+    APPT_TYPE,
+    TO_CHAR(APPT_DATE_YEAR, 'yyyy-mm') AS Appt_Month_Year,
+    TO_CHAR(APPT_DATE_YEAR, 'DY') AS APPT_DAY,
+    COUNT(*) AS total_appts
+FROM (VILLEA04.AMBULATORY_ACCESS)
+GROUP BY
+    CAMPUS,
+    CAMPUS_SPECIALTY,
+    DEPARTMENT,
+    RESOURCES,
+    VISIT_METHOD,
+    APPT_DATE_YEAR,
+    APPT_STATUS,
+    PROVIDER,
+    APPT_TYPE,
+    APPT_DAY")
+
+access_npr_summary_drop <- glue("DROP TABLE AMBULATORY_ACCESS_NPR_SUMMARY_TABLE")
+access_npr_summary <- glue("CREATE TABLE AMBULATORY_ACCESS_NPR_SUMMARY_TABLE AS
+SELECT b.*, COUNT(*) AS total_appts, TO_CHAR(b.APPT_MADE_DATE_YEAR, 'yyyy-mm') AS APPT_MADE_MONTH_YEAR
+FROM(
+        SELECT
+            a.CAMPUS,
+            a.CAMPUS_SPECIALTY,
+            a.DEPARTMENT,
+            a.RESOURCES,
+            a.VISIT_METHOD,
+            trunc(a.APPT_MADE_DTTM) AS APPT_MADE_DATE_YEAR,
+            a.APPT_STATUS,
+            a.PROVIDER,
+            a.APPT_TYPE,
+            TO_CHAR(trunc(a.APPT_MADE_DTTM), 'DY') AS APPT_DAY,
+            a.NEW_PT2
+        FROM (VILLEA04.AMBULATORY_ACCESS) a
+    ) b
+GROUP BY
+    b.CAMPUS,
+    b.CAMPUS_SPECIALTY,
+    b.DEPARTMENT,
+    b.RESOURCES,
+    b.VISIT_METHOD,
+    b.APPT_MADE_DATE_YEAR,
+    b.APPT_STATUS,
+    b.PROVIDER,
+    b.APPT_TYPE,
+    b.APPT_DAY,
+    b.NEW_PT2")
+
+
+  tryCatch({
+        poolcon_upt <- dbPool(drv = odbc::odbc(),
+                      dsn= "OAO Cloud DB Staging")
+        dbBegin(conn)
+            if(dbExistsTable(conn, "AMBULATORY_ACCESS_SUMMARY_TABLE")){
+          dbExecute(poolcon_upt, access_summary_drop) 
+            }
+          dbExecute(poolcon_upt, access_summary_query) 
+            if(dbExistsTable(conn, "AMBULATORY_ACCESS_NPR_SUMMARY_TABLE")){
+          dbExecute(poolcon_upt, access_npr_summary_drop) 
+            }
+          dbExecute(poolcon_upt, access_npr_summary) 
+
+
+        
+        dbCommit(poolcon_upt)
+        dbDisconnect(poolcon_upt)
+        print("success")
+
+  },
+  error = function(err){
+    print("error staging")
+    dbRollback(poolcon_upt)
+    dbDisconnect(poolcon_upt)
+  })
 
 ```
 
