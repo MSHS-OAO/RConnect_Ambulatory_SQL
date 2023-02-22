@@ -289,11 +289,11 @@ GROUP BY
         poolcon_upt <- dbPool(drv = odbc::odbc(),
                       dsn= "OAO Cloud DB Staging")
         dbBegin(conn)
-            if(dbExistsTable(conn, "AMBULATORY_ACCESS_SUMMARY_TABLE")){
+            if(dbExistsTable(poolcon_upt, "AMBULATORY_ACCESS_SUMMARY_TABLE")){
           dbExecute(poolcon_upt, access_summary_drop) 
             }
           dbExecute(poolcon_upt, access_summary_query) 
-            if(dbExistsTable(conn, "AMBULATORY_ACCESS_NPR_SUMMARY_TABLE")){
+            if(dbExistsTable(poolcon_upt, "AMBULATORY_ACCESS_NPR_SUMMARY_TABLE")){
           dbExecute(poolcon_upt, access_npr_summary_drop) 
             }
           dbExecute(poolcon_upt, access_npr_summary) 
