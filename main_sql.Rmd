@@ -286,9 +286,8 @@ GROUP BY
 
 
   tryCatch({
-        poolcon_upt <- dbPool(drv = odbc::odbc(),
-                      dsn= "OAO Cloud DB Staging")
-        dbBegin(conn)
+        poolcon_upt <- dbConnect(drv = odbc(), "OAO Cloud DB Staging", timeout = 30)
+        dbBegin(poolcon_upt)
             if(dbExistsTable(poolcon_upt, "AMBULATORY_ACCESS_SUMMARY_TABLE")){
           dbExecute(poolcon_upt, access_summary_drop) 
             }
