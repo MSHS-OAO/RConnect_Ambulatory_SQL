@@ -82,6 +82,7 @@ FROM MV_DM_PATIENT_ACCESS a
                     ) c")
 access_index <- glue("CREATE index filter_index on AMBULATORY_ACCESS_TABLE (CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_TYPE, APPT_DTTM, APPT_DAY)")
 appt_status_index <- glue("CREATE index status_index on AMBULATORY_ACCESS_TABLE (APPT_STATUS)")
+access_index_npr <- glue("CREATE index filter_index_access on AMBULATORY_ACCESS_TABLE (APPT_MADE_DTTM, PROVIDER, APPT_TYPE, DEPARTMENT, CAMPUS_SPECIALTY)")
 
 
 drop_ambulatory_filters_query <- glue("DROP TABLE AMBULATORY_FILTERS")
@@ -188,6 +189,8 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
         dbExecute(conn, access_query)
         dbExecute(conn, access_index)
         dbExecute(conn, appt_status_index)
+        dbExecute(conn, access_index_npr)
+
         
         if(dbExistsTable(conn, "AMBULATORY_FILTERS")){
           dbExecute(conn, drop_ambulatory_filters_query)
