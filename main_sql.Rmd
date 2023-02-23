@@ -68,7 +68,8 @@ SELECT c.*
                              trunc(a.APPT_DTTM) AS Appt_Date_Year,
                              TO_CHAR(a.APPT_DTTM, 'DY') AS APPT_DAY,
                              TRIM(TRAILING FROM REGEXP_REPLACE(a.PROV_NAME_WID, '{reg_exp}', '')) AS Provider,
-                             CASE a.VISIT_PROV_STAFF_RESOURCE_C WHEN 1 THEN 'Provider' ELSE 'Resource' END AS Resources
+                             CASE a.VISIT_PROV_STAFF_RESOURCE_C WHEN 1 THEN 'Provider' ELSE 'Resource' END AS Resources,
+                             trunc(a.APPT_MADE_DTTM) AS APPT_MADE_DATE_YEAR
 FROM MV_DM_PATIENT_ACCESS a
         WHERE a.CONTACT_DATE BETWEEN TO_DATE('{date_1} 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
                         AND TO_DATE('{date_2} 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
