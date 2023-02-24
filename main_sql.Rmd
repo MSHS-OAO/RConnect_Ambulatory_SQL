@@ -46,10 +46,30 @@ WHERE CONTACT_DATE BETWEEN TO_DATE('2021-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS
             
 drop_ambulatory_provider_mapping <- glue("DROP TABLE AMBULATORY_PROVIDER_MAPPING")
 
-drop_access_query <- glue("DROP TABLE AMBULATORY_ACCESS_TABLE")
+drop_access_query <- glue("DROP TABLE AMBULATORY_ACCESS")
 
-access_query <- glue("CREATE TABLE AMBULATORY_ACCESS_TABLE AS
-SELECT c.*
+access_query <- glue("CREATE TABLE AMBULATORY_ACCESS_TEST AS
+SELECT e.*, CASE e.ACCESS_CENTER WHEN 'Y' THEN 'Access Center' ELSE e.APPT_SOURCE_MAP_OTHER END AS Appt_Source_New
+FROM(
+SELECT d.*, APPT_DATE_YEAR - DAYS_SUBTRACT AS APPT_WEEK, NVL(d.APPT_SOURCE_MAP, 'Other') AS APPT_SOURCE_MAP_OTHER
+FROM(
+SELECT c.*,
+EXTRACT(year from c.APPT_DTTM) Appt_Year,
+                       CONCAT(TO_CHAR(c.APPT_DTTM, 'HH24'), ':00') APPT_TM_HR,
+                       TO_CHAR(c.APPT_DTTM, 'MON') AS Appt_Month,
+                       TO_CHAR(c.APPT_DTTM, 'yyyy-mm') AS Appt_Month_Year,
+                       TO_CHAR(c.APPT_MADE_DTTM, 'yyyy-mm') AS Appt_Made_Month_Year,
+                       TO_CHAR(c.APPT_DTTM, 'mm-dd') AS Appt_Date,
+                       LEAST(c.VISIT_END_DTTM, c.CHECKOUT_DTTM) AS min_of_checkout_visit,
+                       (LEAST(c.VISIT_END_DTTM, c.CHECKOUT_DTTM)  - c.CHECKIN_DTTM)*24*60 AS cycleTime,
+                       (c.ROOMIN_DTTM - c.CHECKIN_DTTM) * 24*60 AS checkinToRoomin,
+                       (c.CHECKOUT_DTTM - c.VISIT_END_DTTM)*24*60 AS visitEndToCheckout,
+                       (c.Appt_DTTM - c.APPT_MADE_DTTM) AS Wait_Time,
+                       (c.APPT_DTTM - c.APPT_CANCEL_DTTM) AS Lead_Days,
+                       TRIM( ',' FROM c.DEPARTMENT||','||c.PROV_NAME_WID||','||c.MRN||','||c.APPT_DTTM ) AS uniqueID,
+                       CASE WHEN c.NEW_PT = 4 THEN 'NEW' ELSE 'ESTABLISHED' END AS NEW_PT2,
+                       REGEXP_SUBSTR(c.CLASS_PT, 'NEW') AS NEW_PT3,
+                       CONCAT('Q',TO_CHAR(c.APPT_DTTM, 'Q')) AS APPT_QUARTER
     FROM(
      SELECT i.CAMPUS, i.CAMPUS_SPECIALTY, i.DEPARTMENT,d.*, b.holiday, f.DAYS_SUBTRACT, h.APPT_SOURCE_NEW AS APPT_SOURCE_MAP 
     FROM(
@@ -80,8 +100,10 @@ FROM MV_DM_PATIENT_ACCESS a
                     LEFT JOIN SUBTRACT_DAYS f on d.APPT_DAY = f.WEEKDAY
                     LEFT JOIN AMBULATORY_APPT_SOURCE h on d.APPT_SOURCE = h.APPT_SOURCE
                     LEFT JOIN AMBULATORY_MAPPING i on d.DEPARTMENT_ID = i.DEPARTMENT_ID
-                    ) c")
-access_index <- glue("CREATE index filter_index on AMBULATORY_ACCESS_TABLE (CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_TYPE, APPT_DTTM, APPT_DAY)")
+                    ) c
+                    )d
+                    ) e")
+access_index <- glue("CREATE index filter_index on AMBULATORY_ACCESS_TABLE (CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_TYPE, APPT_DATE_YEAR, APPT_DAY)")
 appt_status_index <- glue("CREATE index status_index on AMBULATORY_ACCESS_TABLE (APPT_STATUS)")
 access_index_npr <- glue("CREATE index filter_index_access on AMBULATORY_ACCESS_TABLE (APPT_MADE_DTTM, PROVIDER, APPT_TYPE, DEPARTMENT, CAMPUS_SPECIALTY)")
 
@@ -240,6 +262,8 @@ SELECT
     APPT_TYPE,
     TO_CHAR(APPT_DATE_YEAR, 'yyyy-mm') AS Appt_Month_Year,
     TO_CHAR(APPT_DATE_YEAR, 'DY') AS APPT_DAY,
+    NEW_PT2,
+    NEW_PT3
     COUNT(*) AS total_appts
 FROM (VILLEA04.AMBULATORY_ACCESS)
 GROUP BY
@@ -252,7 +276,9 @@ GROUP BY
     APPT_STATUS,
     PROVIDER,
     APPT_TYPE,
-    APPT_DAY")
+    APPT_DAY,
+    NEW_PT2,
+    NEW_PT3")
 
 access_npr_summary_drop <- glue("DROP TABLE AMBULATORY_ACCESS_NPR_SUMMARY_TABLE")
 access_npr_summary <- glue("CREATE TABLE AMBULATORY_ACCESS_NPR_SUMMARY_TABLE AS
@@ -270,6 +296,7 @@ FROM(
             a.APPT_TYPE,
             TO_CHAR(trunc(a.APPT_MADE_DTTM), 'DY') AS APPT_DAY,
             a.NEW_PT2
+            a.NEW_PT3
         FROM (VILLEA04.AMBULATORY_ACCESS) a
     ) b
 GROUP BY
@@ -283,7 +310,8 @@ GROUP BY
     b.PROVIDER,
     b.APPT_TYPE,
     b.APPT_DAY,
-    b.NEW_PT2")
+    b.NEW_PT2,
+    b.NEW_PT3")
 
 
   tryCatch({
