@@ -4,7 +4,7 @@ output: html_document
 date: '2022-09-09'
 ---
 
-```{r cars}
+```{r}
 library(glue)
 library(odbc)
 library(tidyverse)
@@ -15,6 +15,7 @@ date_1 <- "2021-01-01"
 date_2 <- Sys.Date() - 1
 reg_exp <- "\\[(.*?)\\]"
 
+### Maping Table
 ambulatory_mapping_drop <- glue("DROP TABLE AMBULATORY_MAPPING")
 ambulatory_mapping_query <- glue("CREATE TABLE AMBULATORY_MAPPING AS
 SELECT b.CAMPUS, b.CAMPUS_SPECIALTY, b.DEPARTMENT_OLD, b.DEPARTMENT, b.DEPARTMENT_ID, d.LAST_ARRIVED
@@ -39,6 +40,7 @@ FROM(
 ambulatory_mapping_index <- glue("CREATE index amb_mapping_index on AMBULATORY_MAPPING (CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, DEPARTMENT_ID)")
 ambulatory_mapping_grant <- glue("GRANT SELECT on AMBULATORY_MAPPING to kweons01")
 
+###Provider mapping table
 ambulatory_provider_mapping <- glue("CREATE TABLE AMBULATORY_PROVIDER_MAPPING AS
 SELECT distinct TRIM(TRAILING FROM REGEXP_REPLACE(PROV_NAME_WID, '{reg_exp}', '')) AS Provider, PROV_ID FROM MV_DM_PATIENT_ACCESS
 WHERE CONTACT_DATE BETWEEN TO_DATE('2021-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
@@ -48,6 +50,8 @@ drop_ambulatory_provider_mapping <- glue("DROP TABLE AMBULATORY_PROVIDER_MAPPING
 
 drop_access_query <- glue("DROP TABLE AMBULATORY_ACCESS")
 
+
+###Main Ambulatory Table
 access_query <- glue("CREATE TABLE AMBULATORY_ACCESS AS
 SELECT e.*, CASE e.ACCESS_CENTER WHEN 'Y' THEN 'Access Center' ELSE e.APPT_SOURCE_MAP_OTHER END AS Appt_Source_New
 FROM(
@@ -108,10 +112,13 @@ appt_status_index <- glue("CREATE index status_index on AMBULATORY_ACCESS (APPT_
 access_index_npr <- glue("CREATE index filter_index_access on AMBULATORY_ACCESS (APPT_MADE_DTTM, PROVIDER, APPT_TYPE, DEPARTMENT, CAMPUS_SPECIALTY)")
 
 
+###Table specifically for global filters
 drop_ambulatory_filters_query <- glue("DROP TABLE AMBULATORY_FILTERS")
 ambulatory_filters_query <- glue("CREATE TABLE AMBULATORY_FILTERS AS
 SELECT DISTINCT CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, PROVIDER, RESOURCES, VISIT_METHOD, APPT_TYPE FROM AMBULATORY_ACCESS")
 
+
+## Slot Table
 drop_slot_query <- glue("DROP TABLE AMBULATORY_SLOT")
 slot_query <- glue("CREATE TABLE AMBULATORY_SLOT AS
 SELECT c.CAMPUS, c.CAMPUS_SPECIALTY, c.DEPARTMENT AS DEPARTMENT_NAME, b.*, b.APPT_DATE_YEAR - f.DAYS_SUBTRACT AS APPT_WEEK
@@ -151,6 +158,7 @@ FROM (
 
 
 
+###Population View
 drop_population_query <- glue("DROP VIEW AMBULATORY_POPULATION")
 population_query <- glue("CREATE VIEW AMBULATORY_POPULATION AS 
 SELECT g.*
@@ -191,7 +199,7 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
 
 
 
-
+###Query Execution
   tryCatch({
         conn <- dbConnect(drv = odbc(), "OAO Cloud DB", timeout = 30)
         dbBegin(conn)
@@ -248,6 +256,7 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
 
 #source("utilization.R")
 
+## Grouped Access Table
 access_summary_drop <- glue("DROP TABLE AMBULATORY_ACCESS_SUMMARY_TABLE")
 access_summary_query <- glue("CREATE TABLE AMBULATORY_ACCESS_SUMMARY_TABLE AS
 SELECT
@@ -280,6 +289,8 @@ GROUP BY
     NEW_PT2,
     NEW_PT3")
 
+
+###Grouped NPR Table
 access_npr_summary_drop <- glue("DROP TABLE AMBULATORY_ACCESS_NPR_SUMMARY_TABLE")
 access_npr_summary <- glue("CREATE TABLE AMBULATORY_ACCESS_NPR_SUMMARY_TABLE AS
 SELECT b.*, COUNT(*) AS total_appts, TO_CHAR(b.APPT_MADE_DATE_YEAR, 'yyyy-mm') AS APPT_MADE_MONTH_YEAR
@@ -314,6 +325,7 @@ GROUP BY
     b.NEW_PT3")
 
 
+## Grouped Table execution
   tryCatch({
         poolcon_upt <- dbConnect(drv = odbc(), "OAO Cloud DB Staging", timeout = 30)
         dbBegin(poolcon_upt)
