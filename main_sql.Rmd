@@ -286,6 +286,8 @@ GROUP BY
     APPT_DAY,
     NEW_PT2,
     NEW_PT3")
+    
+    access_summary_index <- glue("create INDEX access_index_summary on AMBULATORY_ACCESS_SUMMARY_TABLE (APPT_DATE_YEAR, DEPARTMENT)")
 
 
 ###Grouped NPR Table
@@ -321,6 +323,8 @@ GROUP BY
     b.APPT_DAY,
     b.NEW_PT2,
     b.NEW_PT3")
+    
+    npr_index_summary <- glue("create INDEX npr_index_summary on AMBULATORY_ACCESS_NPR_SUMMARY_TABLE (APPT_MADE_DATE_YEAR, DEPARTMENT)")
 
 
 ## Grouped Table execution
@@ -331,10 +335,12 @@ GROUP BY
           dbExecute(poolcon_upt, access_summary_drop) 
             }
           dbExecute(poolcon_upt, access_summary_query) 
+          dbExecute(poolcon_upt, access_summary_index)
             if(dbExistsTable(poolcon_upt, "AMBULATORY_ACCESS_NPR_SUMMARY_TABLE")){
           dbExecute(poolcon_upt, access_npr_summary_drop) 
             }
           dbExecute(poolcon_upt, access_npr_summary) 
+          dbExecute(poolcon_upt, npr_index_summary)
 
 
         
