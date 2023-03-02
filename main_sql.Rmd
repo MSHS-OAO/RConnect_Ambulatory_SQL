@@ -107,9 +107,8 @@ FROM MV_DM_PATIENT_ACCESS a
                     ) c
                     )d
                     ) e")
-access_index <- glue("CREATE index filter_index on AMBULATORY_ACCESS (CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, RESOURCES, PROVIDER, VISIT_METHOD, APPT_TYPE, APPT_DATE_YEAR, APPT_DAY)")
-appt_status_index <- glue("CREATE index status_index on AMBULATORY_ACCESS (APPT_STATUS)")
-access_index_npr <- glue("CREATE index filter_index_access on AMBULATORY_ACCESS (APPT_MADE_DTTM, PROVIDER, APPT_TYPE, DEPARTMENT, CAMPUS_SPECIALTY)")
+access_index <- glue("CREATE INDEX access_index on AMBULATORY_ACCESS (APPT_DATE_YEAR, DEPARTMENT)")
+access_index_npr <- glue("create index npr_index on AMBULATORY_ACCESS (APPT_MADE_DATE_YEAR, DEPARTMENT)")
 
 
 ###Table specifically for global filters
@@ -221,7 +220,6 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
         }
         dbExecute(conn, access_query)
         dbExecute(conn, access_index)
-        dbExecute(conn, appt_status_index)
         dbExecute(conn, access_index_npr)
 
         
