@@ -314,7 +314,7 @@ FROM(
             a.PROVIDER,
             a.APPT_TYPE,
             TO_CHAR(trunc(a.APPT_MADE_DTTM), 'DY') AS APPT_DAY,
-            a.NEW_PT2
+            a.NEW_PT2,
             a.NEW_PT3
         FROM (VILLEA04.AMBULATORY_ACCESS) a
     ) b
