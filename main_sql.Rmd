@@ -238,11 +238,11 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
         }
         dbExecute(conn, ambulatory_filters_query)
         
-        if(dbExistsTable(conn, "AMBULATORY_SLOT")){
-          dbExecute(conn, drop_slot_query)
-        }
-        dbExecute(conn, slot_query)
-        dbExecute(conn, slot_index)
+        #if(dbExistsTable(conn, "AMBULATORY_SLOT")){
+        #  dbExecute(conn, drop_slot_query)
+        #}
+        #dbExecute(conn, slot_query)
+        #dbExecute(conn, slot_index)
 
         
         if(dbExistsTable(conn, "AMBULATORY_POPULATION")){
