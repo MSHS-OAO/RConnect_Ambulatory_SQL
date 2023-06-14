@@ -69,7 +69,6 @@ EXTRACT(year from c.APPT_DTTM) Appt_Year,
                        TO_CHAR(c.APPT_MADE_DTTM, 'yyyy-mm') AS Appt_Made_Month_Year,
                        TO_CHAR(c.APPT_DTTM, 'mm-dd') AS Appt_Date,
                        LEAST(c.VISIT_END_DTTM, c.CHECKOUT_DTTM) AS min_of_checkout_visit,
-                       (LEAST(c.VISIT_END_DTTM, c.CHECKOUT_DTTM)  - c.CHECKIN_DTTM)*24*60 AS cycleTime,
                        (c.ROOMIN_DTTM - c.CHECKIN_DTTM) * 24*60 AS checkinToRoomin,
                        (c.CHECKOUT_DTTM - c.VISIT_END_DTTM)*24*60 AS visitEndToCheckout,
                        (c.Appt_DTTM - c.APPT_MADE_DTTM) AS Wait_Time,
@@ -81,7 +80,7 @@ EXTRACT(year from c.APPT_DTTM) Appt_Year,
     FROM(
      SELECT i.CAMPUS, i.CAMPUS_SPECIALTY, i.DEPARTMENT,d.*, b.holiday, f.DAYS_SUBTRACT, h.APPT_SOURCE_NEW AS APPT_SOURCE_MAP, j.SCHEDULE_GROUPING
     FROM(
- SELECT a.PROV_NAME_WID, a.PROV_ID, a.DEPARTMENT_ID AS Department_ID, a.REFERRING_PROV_NAME_WID AS Refferring_Provider,
+ SELECT a.PROV_NAME_WID, a.PROV_ID, a.DEPARTMENT_ID AS Department_ID, a.REFERRING_PROV_NAME_WID AS Refferring_Provider, a.CYCLE_TIME_MINUTES AS cycleTime,
                              a.MRN, a.PAT_NAME AS Patient_Name, a.ZIP_CODE, a.BIRTH_DATE, a.FINCLASS AS Coverage,
                              a.APPT_MADE_DTTM, a.APPT_DTTM, a.PRC_NAME AS APPT_TYPE, a.APPT_LENGTH AS APPT_DUR, a.DERIVED_STATUS_DESC AS APPT_STATUS,
                              a.APPT_CANC_DTTM AS APPT_CANCEL_DTTM, a.CANCEL_REASON_NAME AS CANCEL_REASON,
