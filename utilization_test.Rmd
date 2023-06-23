@@ -20,7 +20,7 @@ library(doParallel)
 
 
 conn <- dbConnect(odbc(), "OAO Cloud DB")
-start_date <- Sys.Date() - 1
+start_date <- Sys.Date() - 31
 
 #for (j in 1:741) {
   # date_1 <- "2022-01-01"
@@ -30,7 +30,7 @@ start_date <- Sys.Date() - 1
    # date_1 <- start_date - j
    # date_2 <- start_date - j
   
-  utilization_query_scheduled <- glue("SELECT a.DEPARTMENT_ID, a.RESOURCES, a.PROV_ID, a.VISIT_METHOD, a.APPT_DATE_YEAR, a.APPT_MONTH_YEAR, a.APPT_YEAR, a.APPT_WEEK, a.APPT_DAY, a.HOLIDAY, a.APPT_DUR, a.APPT_DTTM, a.APPT_STATUS, a.MRN, a.VISIT_END_DTTM, a.ROOMIN_DTTM, a.APPT_TYPE
+  utilization_query_scheduled <- glue("SELECT a.DEPARTMENT_ID, a.RESOURCES, a.PROV_ID, a.VISIT_METHOD, a.APPT_DATE_YEAR, a.APPT_MONTH_YEAR, a.APPT_YEAR, a.APPT_WEEK, a.APPT_DAY, a.HOLIDAY, a.APPT_DUR, a.APPT_DTTM, a.APPT_STATUS, a.MRN, a.VISIT_END_DTTM, a.ROOMIN_DTTM, a.APPT_TYPE, a.CHECKIN_DTTM
       FROM AMBULATORY_ACCESS a
       WHERE APPT_STATUS = 'Arrived' AND APPT_DTTM BETWEEN TO_DATE('{date_1} 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
               AND TO_DATE('{date_2} 23:59:59', 'YYYY-MM-DD HH24:MI:SS')")
@@ -38,10 +38,10 @@ start_date <- Sys.Date() - 1
   
   utilization_data_raw <- dbGetQuery(conn, utilization_query_scheduled)
   utilization_data_raw <- utilization_data_raw %>% distinct()
-  data.hour.scheduled <- utilization_data_raw %>% select(-VISIT_END_DTTM, -ROOMIN_DTTM) %>% filter(APPT_STATUS == "Arrived")
+  data.hour.scheduled <- utilization_data_raw %>% select(-VISIT_END_DTTM, -ROOMIN_DTTM, -CHECKIN_DTTM) %>% filter(APPT_STATUS == "Arrived")
   # data.hour.scheduled.save <- data.hour.scheduled
   data.hour.scheduled <- data.hour.scheduled %>% mutate(Appt.Start = as.POSIXct(APPT_DTTM, format = "%H:%M"))
-  data.hour.scheduled <- data.hour.scheduled %>% mutate(Appt.End = as.POSIXct(Appt.Start + APPT_DUR*60, format = "%H:%M"))
+  data.hour.scheduled <- data.hour.scheduled %>% mutate(Appt.End = as.POSIXct(Appt.Start + 1.2*APPT_DUR*60, format = "%H:%M"))
   data.hour.scheduled <- data.hour.scheduled %>% mutate(Appt.Date = as.Date(APPT_DTTM))
   
   
@@ -134,6 +134,7 @@ start_date <- Sys.Date() - 1
   data.hour.scheduled <- data.hour.scheduled %>% mutate(actual = as.numeric(difftime(Appt.End, Appt.Start, units = "mins")))
   data.hour.scheduled <- data.hour.scheduled  %>% mutate(comparison = ifelse(sum == actual, 0, 1))
   data.hour.scheduled <- data.hour.scheduled %>% filter(comparison == 0)
+  data.hour.scheduled <- data.hour.scheduled %>% mutate(SCHEDULE_TO_ACTUAL_CONVERSION = "FALSE")
   
   
   
@@ -142,6 +143,16 @@ start_date <- Sys.Date() - 1
   ###Data hour Actual --------------------------------------------------------------
   data.hour.arrived <- utilization_data_raw %>% filter(APPT_STATUS == 'Arrived')
   
+  data.hour.arrived <-  data.hour.arrived %>% mutate(SCHEDULE_TO_ACTUAL_CONVERSION = ifelse(is.na(ROOMIN_DTTM), "TRUE", "FALSE"))
+  data.hour.arrived.non.na <- data.hour.arrived %>% filter(SCHEDULE_TO_ACTUAL_CONVERSION == "FALSE")
+  data.hour.arrived.na <- data.hour.arrived %>% filter(SCHEDULE_TO_ACTUAL_CONVERSION == "TRUE")
+  
+  data.hour.arrived.na <- data.hour.arrived.na %>% group_by(DEPARTMENT_ID, PROV_ID, MRN, APPT_DTTM) %>% 
+                          mutate(ROOMIN_DTTM = max(CHECKIN_DTTM, APPT_DTTM, na.rm = T)) %>%
+                          mutate(VISIT_END_DTTM = ROOMIN_DTTM + 1.2*APPT_DUR*60)
+  
+  data.hour.arrived <- rbind(data.hour.arrived.na, data.hour.arrived.non.na) %>% select(-CHECKIN_DTTM)
+
   
   ########### Analysis of % of visits with actual visit start and end times ############
   data.hour.arrived  <- data.hour.arrived  %>% mutate(Appt.Start = floor_date(ROOMIN_DTTM, unit = "mins"),
@@ -209,13 +220,13 @@ start_date <- Sys.Date() - 1
   }
   
   
-  data.hour.arrived <- data.hour.arrived[,c(names(data.hour.arrived[,1:19]), timeOptionsHr) ]
+  data.hour.arrived <- data.hour.arrived[,c(names(data.hour.arrived[,1:20]), timeOptionsHr) ]
   
   
   
-  data.hour.arrived <- data.hour.arrived %>% select(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM,VISIT_END_DTTM, ROOMIN_DTTM, APPT_STATUS, MRN, APPT_TYPE, all_of(timeOptionsHr))
+  data.hour.arrived <- data.hour.arrived %>% select(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM,VISIT_END_DTTM, ROOMIN_DTTM, APPT_STATUS, MRN, APPT_TYPE, SCHEDULE_TO_ACTUAL_CONVERSION, all_of(timeOptionsHr))
   
-  data.hour.arrived <- data.hour.arrived %>% select(-c(VISIT_END_DTTM, ROOMIN_DTTM))
+  # data.hour.arrived <- data.hour.arrived %>% select(-c(VISIT_END_DTTM, ROOMIN_DTTM))
   
   data.hour.arrived$sum <- rowSums(data.hour.arrived[,which(colnames(data.hour.arrived)=="00:00"):which(colnames(data.hour.arrived)=="23:00")], na.rm = TRUE)
   data.hour.arrived <- data.hour.arrived %>% mutate(actual= as.numeric(difftime(Appt.End, Appt.Start, units = "mins")))
@@ -236,15 +247,19 @@ start_date <- Sys.Date() - 1
   data.hour.arrived <- data.hour.arrived %>% select(-VISIT_END_DTTM, -ROOMIN_DTTM)
   
   
+  missing_arrived_rows <- anti_join(data.hour.scheduled, data.hour.arrived, by = c("DEPARTMENT_ID"= "DEPARTMENT_ID", "PROV_ID" = "PROV_ID", "MRN" = "MRN", "APPT_DTTM" = "APPT_DTTM"))
+  missing_arrived_rows <- missing_arrived_rows %>% mutate(util_type = "actual",
+                                                          SCHEDULE_TO_ACTUAL_CONVERSION = "TRUE")
   
   
-  utilization.data <- rbind(data.hour.scheduled, data.hour.arrived)
+  
+  utilization.data <- rbind(data.hour.scheduled, data.hour.arrived, missing_arrived_rows) ##USe inner join insetad of bind
+
   
   utilization.data <- utilization.data %>% select(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, sum, util_type, APPT_TYPE, all_of(timeOptionsHr_filter))
   
   
-  utilization.data <- utilization.data %>% mutate(SCHEDULE_TO_ACTUAL_CONVERSION = "FALSE")
-  
+
   
   TABLE_NAME <-  "utilization_table"
   
