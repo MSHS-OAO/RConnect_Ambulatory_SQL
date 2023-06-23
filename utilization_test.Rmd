@@ -215,7 +215,7 @@ start_date <- Sys.Date() - 1
   
   data.hour.arrived <- data.hour.arrived %>% select(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM,VISIT_END_DTTM, ROOMIN_DTTM, APPT_STATUS, MRN, APPT_TYPE, all_of(timeOptionsHr))
   
-  
+  data.hour.arrived <- data.hour.arrived %>% select(-c(VISIT_END_DTTM, ROOMIN_DTTM))
   
   data.hour.arrived$sum <- rowSums(data.hour.arrived[,which(colnames(data.hour.arrived)=="00:00"):which(colnames(data.hour.arrived)=="23:00")], na.rm = TRUE)
   data.hour.arrived <- data.hour.arrived %>% mutate(actual= as.numeric(difftime(Appt.End, Appt.Start, units = "mins")))
@@ -242,6 +242,8 @@ start_date <- Sys.Date() - 1
   
   utilization.data <- utilization.data %>% select(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, sum, util_type, APPT_TYPE, all_of(timeOptionsHr_filter))
   
+  
+  utilization.data <- utilization.data %>% mutate(SCHEDULE_TO_ACTUAL_CONVERSION = "FALSE")
   
   
   TABLE_NAME <-  "utilization_table"
@@ -282,6 +284,7 @@ start_date <- Sys.Date() - 1
     `18:00` <-  x[31]
     `19:00` <-  x[32]
     `20:00` <-  x[33]
+    SCHEDULE_TO_ACTUAL_CONVERSION <- x[34]
     
   
     
@@ -291,7 +294,7 @@ start_date <- Sys.Date() - 1
                    APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, 
                    APPT_DUR, Appt_Start, Appt_End, APPT_DTTM, APPT_STATUS, MRN, SUM, util_type, APPT_TYPE,
                    H_07_00, H_08_00, H_09_00, H_10_00, H_11_00, H_12_00, H_13_00, 
-                   H_14_00, H_15_00, H_16_00, H_17_00, H_18_00, H_19_00, H_20_00
+                   H_14_00, H_15_00, H_16_00, H_17_00, H_18_00, H_19_00, H_20_00, SCHEDULE_TO_ACTUAL_CONVERSION 
                    )
                    VALUES('{DEPARTMENT_ID}', '{RESOURCES}','{PROV_ID}',
                    '{VISIT_METHOD}',  TO_DATE('{APPT_DATE_YEAR}', 'YYYY-MM-DD'),
@@ -300,7 +303,7 @@ start_date <- Sys.Date() - 1
                     TO_DATE('{Appt.End}', 'YYYY-MM-DD HH24:MI:SS'), TO_DATE('{APPT_DTTM}', 'YYYY-MM-DD HH24:MI:SS'),
                     '{APPT_STATUS}', '{MRN}', '{sum}', '{util_type}', '{APPT_TYPE}', '{`07:00`}','{`08:00`}','{`09:00`}', '{`10:00`}',
                     '{`11:00`}','{`12:00`}', '{`13:00`}', '{`14:00`}','{`15:00`}',
-                    '{`16:00`}', '{`17:00`}','{`18:00`}','{`19:00`}','{`20:00`}')")
+                    '{`16:00`}', '{`17:00`}','{`18:00`}','{`19:00`}','{`20:00`}', '{SCHEDULE_TO_ACTUAL_CONVERSION}')")
                     
     
     return(values)
@@ -342,13 +345,14 @@ start_date <- Sys.Date() - 1
            `17:00`= as.numeric(`17:00`),
            `18:00`= as.numeric(`18:00`),
            `19:00`= as.numeric(`19:00`),
-           `20:00`= as.numeric(`20:00`))%>%
+           `20:00`= as.numeric(`20:00`),
+           SCHEDULE_TO_ACTUAL_CONVERSION = as.character(SCHEDULE_TO_ACTUAL_CONVERSION))%>%
     
            select(DEPARTMENT_ID, RESOURCES, PROV_ID, 
            VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, 
            APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, 
            APPT_STATUS, MRN,sum, util_type, APPT_TYPE, `07:00`,`08:00`,`09:00`, `10:00`,`11:00`,`12:00`,
-           `13:00`, `14:00`,`15:00`,`16:00`,`17:00`,`18:00`,`19:00`,`20:00`)
+           `13:00`, `14:00`,`15:00`,`16:00`,`17:00`,`18:00`,`19:00`,`20:00`, SCHEDULE_TO_ACTUAL_CONVERSION )
   
   special_character_columns <- c("RESOURCES", "VISIT_METHOD", "APPT_STATUS", "APPT_TYPE")
   utilization.data <- utilization.data %>% mutate_at(all_of(special_character_columns), ~ str_replace(., "'", "''"))
@@ -416,5 +420,6 @@ start_date <- Sys.Date() - 1
 #  print(j)
 #}
 
+source("actual_encouters_missing_processing.R")  
 ```
 
