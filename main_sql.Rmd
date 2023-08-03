@@ -48,11 +48,11 @@ WHERE CONTACT_DATE BETWEEN TO_DATE('2021-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS
             
 drop_ambulatory_provider_mapping <- glue("DROP TABLE AMBULATORY_PROVIDER_MAPPING")
 
-drop_access_query <- glue("DROP TABLE AMBULATORY_ACCESS_TABLE")
+drop_access_query <- glue("DROP TABLE AMBULATORY_ACCESS")
 
 
 ###Main Ambulatory Table
-access_query <- glue("CREATE TABLE AMBULATORY_ACCESS_TABLE AS
+access_query <- glue("CREATE TABLE AMBULATORY_ACCESS AS
 SELECT e.*, nvl(e.NEW_PT3_RAW, 'ESTABLISHED') AS NEW_PT3, nvl(e.SCHEDULE_GROUPING, 'Other') AS SCHEDULE_GROUPING_MAPPED,
 nvl(e.CAMPUS_NEW, 'NA') AS CAMPUS, 
 CASE e.ACCESS_CENTER WHEN 'Y' THEN 'Access Center' ELSE e.APPT_SOURCE_MAP_OTHER END AS Appt_Source_New,
@@ -114,10 +114,10 @@ FROM MV_DM_PATIENT_ACCESS a
                     ) c
                     )d
                     ) e")
-access_index <- glue("CREATE INDEX access_index on AMBULATORY_ACCESS_TABLE (APPT_DATE_YEAR, DEPARTMENT)")
-access_index_npr <- glue("create index npr_index on AMBULATORY_ACCESS_TABLE (APPT_MADE_DATE_YEAR, DEPARTMENT)")
-access_permission <- glue("GRANT SELECT ON AMBULATORY_ACCESS_TABLE TO kweons01")
-access_permission_dev <- glue("GRANT SELECT ON AMBULATORY_ACCESS_TABLE TO OAO_DEVELOPMENT")
+access_index <- glue("CREATE INDEX access_index on AMBULATORY_ACCESS (APPT_DATE_YEAR, DEPARTMENT)")
+access_index_npr <- glue("create index npr_index on AMBULATORY_ACCESS (APPT_MADE_DATE_YEAR, DEPARTMENT)")
+access_permission <- glue("GRANT SELECT ON AMBULATORY_ACCESS TO kweons01")
+access_permission_dev <- glue("GRANT SELECT ON AMBULATORY_ACCESS TO OAO_DEVELOPMENT")
 
 
 ###Table specifically for global filters
