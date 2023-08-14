@@ -98,7 +98,7 @@ EXTRACT(year from c.APPT_DTTM) Appt_Year,
                              a.ACCESS_CENTER_SCHEDULED_YN AS ACCESS_CENTER, a.VISIT_METHOD, a.VISIT_PROV_STAFF_RESOURCE_C,
                              a.PRIMARY_DX_CODE, a.ENC_CLOSED_CHARGE_STATUS, a.Y_ENC_COSIGN_TIME, a.Y_ENC_CLOSE_TIME, a.Y_ENC_OPEN_TIME, a.NPI, a.VISIT_GROUP_NUM AS NEW_PT, 
                              a.PAT_ENC_CSN_ID, a.VISITPLAN, a.ATTRIB_BILL_AREA,
-                             TRIM(a.SCHED_METHOD) AS SCHED_METHOD_TRIMMED,
+                             TRIM(LOWER(a.SCHED_METHOD)) AS SCHED_METHOD_TRIMMED,
                              trunc(a.APPT_DTTM) AS Appt_Date_Year,
                              TO_CHAR(a.APPT_DTTM, 'DY') AS APPT_DAY,
                              TRIM(TRAILING FROM REGEXP_REPLACE(a.PROV_NAME_WID, '{reg_exp}', '')) AS Provider,
@@ -114,7 +114,7 @@ FROM MV_DM_PATIENT_ACCESS a
                     LEFT JOIN SUBTRACT_DAYS f on d.APPT_DAY = f.WEEKDAY
                     LEFT JOIN AMBULATORY_APPT_SOURCE h on d.APPT_SOURCE = h.APPT_SOURCE
                     LEFT JOIN AMBULATORY_MAPPING i on d.DEPARTMENT_ID = i.DEPARTMENT_ID
-                    LEFT JOIN AMBULATORY_SCHED_METHOD j on d.SCHED_METHOD_TRIMMED = j.SCHED_METHOD
+                    LEFT JOIN AMBULATORY_SCHED_METHOD j on d.SCHED_METHOD_TRIMMED = LOWER(j.SCHED_METHOD)
                     ) c
                     )d
                     ) e")
