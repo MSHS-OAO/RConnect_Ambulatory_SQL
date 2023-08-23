@@ -451,7 +451,7 @@ for (j in 2:599) {
   }
   )
   registerDoSEQ()
-  #print(j)
+  print(j)
 }
 
 #source("actual_encouters_missing_processing.R")  
