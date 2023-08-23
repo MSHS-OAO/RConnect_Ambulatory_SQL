@@ -23,8 +23,8 @@ LEFT JOIN
 
 missing_actual_data <- dbGetQuery(conn, missing_actual_data_query)
 
-if(nrow(missing_actual_data) > 0) {
-  
+
+missing_data_processing <- function(missing_data) {    
   ## Create new column if row was converted from scheduled to actual
   # Pull scheduled data for specific missing encounters time stamps
   median_roomtime_mapping <- utilization_tbl %>% 
@@ -142,11 +142,13 @@ if(nrow(missing_actual_data) > 0) {
    mapped_actual_data <- mapped_actual_data %>% mutate(actual = as.numeric(difftime(Appt.End, Appt.Start, units = "mins")))
    mapped_actual_data <- mapped_actual_data  %>% mutate(comparison = ifelse(sum == actual, 0, 1))
    mapped_actual_data <- mapped_actual_data %>% filter(comparison == 0)
+}
    
    mapped_actual_data <- mapped_actual_data %>% select(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, 
                                                        APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, 
                                                        Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, sum, util_type, 
                                                        APPT_TYPE, all_of(timeOptionsHr_filter), Schedule_to_Actual_Conversion)
+
    
    TABLE_NAME <-  "utilization_table"
    
@@ -304,4 +306,3 @@ if(nrow(missing_actual_data) > 0) {
      }
    )
    registerDoSEQ()
-}

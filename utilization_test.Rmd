@@ -147,9 +147,26 @@ start_date <- Sys.Date()
   data.hour.arrived.non.na <- data.hour.arrived %>% filter(SCHEDULE_TO_ACTUAL_CONVERSION == "FALSE")
   data.hour.arrived.na <- data.hour.arrived %>% filter(SCHEDULE_TO_ACTUAL_CONVERSION == "TRUE")
   
+  utilization_tbl <- tbl(conn, "utilization_table")
+
+  median_roomtime_mapping <- utilization_tbl %>%
+                             filter(UTIL_TYPE == 'actual') %>%
+                             group_by(DEPARTMENT_ID, APPT_TYPE) %>%
+                             summarise(median_room_time = median(SUM, na.rm = TRUE)) %>%
+                             collect()
+
+
+  mapped_actual_data <- left_join(data.hour.arrived.na, median_roomtime_mapping)
+  mapped_actual_data <- mapped_actual_data %>%
+   mutate(SCHEDULE_TO_ACTUAL_CONVERSION = ifelse(is.na(median_room_time), "TRUE", "FALSE")) %>%
+   mutate(APPT_DUR = ifelse(is.na(median_room_time),1.2*APPT_DUR, median_room_time))
+
+  data.hour.arrived.na <- mapped_actual_data %>% select(-median_room_time)
+  
+  
   data.hour.arrived.na <- data.hour.arrived.na %>% group_by(DEPARTMENT_ID, PROV_ID, MRN, APPT_DTTM) %>% 
                           mutate(ROOMIN_DTTM = max(CHECKIN_DTTM, APPT_DTTM, na.rm = T)) %>%
-                          mutate(VISIT_END_DTTM = ROOMIN_DTTM + 1.2*APPT_DUR*60)
+                          mutate(VISIT_END_DTTM = ROOMIN_DTTM + APPT_DUR*60)
   
   data.hour.arrived <- rbind(data.hour.arrived.na, data.hour.arrived.non.na) %>% select(-CHECKIN_DTTM)
 
@@ -247,7 +264,9 @@ start_date <- Sys.Date()
   data.hour.arrived <- data.hour.arrived %>% select(-VISIT_END_DTTM, -ROOMIN_DTTM)
   
   
-  missing_arrived_rows <- anti_join(data.hour.scheduled, data.hour.arrived, by = c("DEPARTMENT_ID"= "DEPARTMENT_ID", "PROV_ID" = "PROV_ID", "MRN" = "MRN", "APPT_DTTM" = "APPT_DTTM"))
+  missing_arrived_rows <- anti_join(data.hour.scheduled, data.hour.arrived, by = c("DEPARTMENT_ID"= "DEPARTMENT_ID", "PROV_ID" = "PROV_ID", "MRN" = "MRN", "APPT_DTTM" = "APPT_DTTM", "APPT_TYPE" = "APPT_TYPE"))
+  
+  
   missing_arrived_rows <- missing_arrived_rows %>% mutate(util_type = "actual",
                                                           SCHEDULE_TO_ACTUAL_CONVERSION = "TRUE")
   
