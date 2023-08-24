@@ -30,7 +30,7 @@ for (j in 2:599) {
    date_1 <- start_date - j
    date_2 <- start_date - j
   
-  utilization_query_scheduled <- glue("SELECT a.DEPARTMENT_ID, a.RESOURCES, a.PROV_ID, a.VISIT_METHOD, a.APPT_DATE_YEAR, a.APPT_MONTH_YEAR, a.APPT_YEAR, a.APPT_WEEK, a.APPT_DAY, a.HOLIDAY, a.APPT_DUR, a.APPT_DTTM, a.APPT_STATUS, a.MRN, a.VISIT_END_DTTM, a.ROOMIN_DTTM, a.APPT_TYPE, a.CHECKIN_DTTM
+  utilization_query_scheduled <- glue("SELECT a.DEPARTMENT_ID, a.RESOURCES, a.PROV_ID, a.VISIT_METHOD, a.APPT_DATE_YEAR, a.APPT_MONTH_YEAR, a.APPT_YEAR, a.APPT_WEEK, a.APPT_DAY, a.HOLIDAY, a.APPT_DUR, a.APPT_DTTM, a.APPT_STATUS, a.MRN, a.VISIT_END_DTTM, a.ROOMIN_DTTM, a.APPT_TYPE, a.CHECKIN_DTTM, a.PAT_ENC_CSN_ID
       FROM AMBULATORY_ACCESS a
       WHERE APPT_STATUS = 'Arrived' AND APPT_DTTM BETWEEN TO_DATE('{date_1} 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
               AND TO_DATE('{date_2} 23:59:59', 'YYYY-MM-DD HH24:MI:SS')")
@@ -123,10 +123,10 @@ for (j in 2:599) {
   
   
   
-  data.hour.scheduled <- data.hour.scheduled[,c(names(data.hour.scheduled[,1:18]), timeOptionsHr) ]
+  data.hour.scheduled <- data.hour.scheduled[,c(names(data.hour.scheduled[,1:19]), timeOptionsHr) ]
   
   
-  data.hour.scheduled <- data.hour.scheduled %>% select(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, APPT_TYPE, all_of(timeOptionsHr)) 
+  data.hour.scheduled <- data.hour.scheduled %>% select(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, APPT_TYPE, PAT_ENC_CSN_ID, all_of(timeOptionsHr)) 
   
   
   data.hour.scheduled$sum <- rowSums(data.hour.scheduled[,which(colnames(data.hour.scheduled)=="00:00"):                          which(colnames(data.hour.scheduled) =="23:00")], na.rm = T)
@@ -167,6 +167,8 @@ for (j in 2:599) {
   data.hour.arrived.na <- data.hour.arrived.na %>% group_by(DEPARTMENT_ID, PROV_ID, MRN, APPT_DTTM) %>% 
                           mutate(ROOMIN_DTTM = max(CHECKIN_DTTM, APPT_DTTM, na.rm = T)) %>%
                           mutate(VISIT_END_DTTM = ROOMIN_DTTM + APPT_DUR*60)
+  
+  data.hour.arrived.na <- data.hour.arrived.na %>% mutate(SCHEDULE_TO_ACTUAL_CONVERSION = as.character(SCHEDULE_TO_ACTUAL_CONVERSION))
   
   data.hour.arrived <- rbind(data.hour.arrived.na, data.hour.arrived.non.na) %>% select(-CHECKIN_DTTM)
 
@@ -237,11 +239,11 @@ for (j in 2:599) {
   }
   
   
-  data.hour.arrived <- data.hour.arrived[,c(names(data.hour.arrived[,1:20]), timeOptionsHr) ]
+  data.hour.arrived <- data.hour.arrived[,c(names(data.hour.arrived[,1:21]), timeOptionsHr) ]
   
   
   
-  data.hour.arrived <- data.hour.arrived %>% select(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM,VISIT_END_DTTM, ROOMIN_DTTM, APPT_STATUS, MRN, APPT_TYPE, SCHEDULE_TO_ACTUAL_CONVERSION, all_of(timeOptionsHr))
+  data.hour.arrived <- data.hour.arrived %>% select(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM,VISIT_END_DTTM, ROOMIN_DTTM, APPT_STATUS, MRN, APPT_TYPE, SCHEDULE_TO_ACTUAL_CONVERSION, PAT_ENC_CSN_ID, all_of(timeOptionsHr))
   
   # data.hour.arrived <- data.hour.arrived %>% select(-c(VISIT_END_DTTM, ROOMIN_DTTM))
   
@@ -275,7 +277,7 @@ for (j in 2:599) {
   utilization.data <- rbind(data.hour.scheduled, data.hour.arrived, missing_arrived_rows) ##USe inner join insetad of bind
 
   
-  utilization.data <- utilization.data %>% select(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, sum, util_type, APPT_TYPE, all_of(timeOptionsHr_filter), SCHEDULE_TO_ACTUAL_CONVERSION)
+  utilization.data <- utilization.data %>% select(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, sum, util_type, APPT_TYPE, all_of(timeOptionsHr_filter), SCHEDULE_TO_ACTUAL_CONVERSION, PAT_ENC_CSN_ID)
   
   
 
@@ -319,6 +321,7 @@ for (j in 2:599) {
     `19:00` <-  x[32]
     `20:00` <-  x[33]
     SCHEDULE_TO_ACTUAL_CONVERSION <- x[34]
+    PAT_ENC_CSN_ID <- x[35]
     
   
     
@@ -328,7 +331,7 @@ for (j in 2:599) {
                    APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, 
                    APPT_DUR, Appt_Start, Appt_End, APPT_DTTM, APPT_STATUS, MRN, SUM, util_type, APPT_TYPE,
                    H_07_00, H_08_00, H_09_00, H_10_00, H_11_00, H_12_00, H_13_00, 
-                   H_14_00, H_15_00, H_16_00, H_17_00, H_18_00, H_19_00, H_20_00, SCHEDULE_TO_ACTUAL_CONVERSION 
+                   H_14_00, H_15_00, H_16_00, H_17_00, H_18_00, H_19_00, H_20_00, SCHEDULE_TO_ACTUAL_CONVERSION, PAT_ENC_CSN_ID
                    )
                    VALUES('{DEPARTMENT_ID}', '{RESOURCES}','{PROV_ID}',
                    '{VISIT_METHOD}',  TO_DATE('{APPT_DATE_YEAR}', 'YYYY-MM-DD'),
@@ -337,7 +340,7 @@ for (j in 2:599) {
                     TO_DATE('{Appt.End}', 'YYYY-MM-DD HH24:MI:SS'), TO_DATE('{APPT_DTTM}', 'YYYY-MM-DD HH24:MI:SS'),
                     '{APPT_STATUS}', '{MRN}', '{sum}', '{util_type}', '{APPT_TYPE}', '{`07:00`}','{`08:00`}','{`09:00`}', '{`10:00`}',
                     '{`11:00`}','{`12:00`}', '{`13:00`}', '{`14:00`}','{`15:00`}',
-                    '{`16:00`}', '{`17:00`}','{`18:00`}','{`19:00`}','{`20:00`}', '{SCHEDULE_TO_ACTUAL_CONVERSION}')")
+                    '{`16:00`}', '{`17:00`}','{`18:00`}','{`19:00`}','{`20:00`}', '{SCHEDULE_TO_ACTUAL_CONVERSION}', '{PAT_ENC_CSN_ID}')")
                     
     
     return(values)
@@ -380,13 +383,14 @@ for (j in 2:599) {
            `18:00`= as.numeric(`18:00`),
            `19:00`= as.numeric(`19:00`),
            `20:00`= as.numeric(`20:00`),
-           SCHEDULE_TO_ACTUAL_CONVERSION = as.character(SCHEDULE_TO_ACTUAL_CONVERSION))%>%
+           SCHEDULE_TO_ACTUAL_CONVERSION = as.character(SCHEDULE_TO_ACTUAL_CONVERSION),
+           PAT_ENC_CSN_ID = as.character(PAT_ENC_CSN_ID))%>%
     
            select(DEPARTMENT_ID, RESOURCES, PROV_ID, 
            VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, 
            APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, 
            APPT_STATUS, MRN,sum, util_type, APPT_TYPE, `07:00`,`08:00`,`09:00`, `10:00`,`11:00`,`12:00`,
-           `13:00`, `14:00`,`15:00`,`16:00`,`17:00`,`18:00`,`19:00`,`20:00`, SCHEDULE_TO_ACTUAL_CONVERSION )
+           `13:00`, `14:00`,`15:00`,`16:00`,`17:00`,`18:00`,`19:00`,`20:00`, SCHEDULE_TO_ACTUAL_CONVERSION,PAT_ENC_CSN_ID)
   
   special_character_columns <- c("RESOURCES", "VISIT_METHOD", "APPT_STATUS", "APPT_TYPE")
   utilization.data <- utilization.data %>% mutate_at(all_of(special_character_columns), ~ str_replace(., "'", "''"))
