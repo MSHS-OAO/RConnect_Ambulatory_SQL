@@ -11,15 +11,11 @@ utilization_tbl <- tbl(conn, "utilization_table_new")
 ##SQL query that returns rows that are in scheduled but not in actual
 missing_actual_data_query <- glue("SELECT q1.*
 FROM
-(SELECT * FROM \"utilization_table_new\" WHERE UTIL_TYPE = 'scheduled') q1
+(SELECT * FROM \"utilization_table_new\" WHERE UTIL_TYPE = 'scheduled' AND PAT_ENC_CSN_ID IS NOT NULL) q1
 LEFT JOIN
-(SELECT * FROM \"utilization_table_new\" WHERE UTIL_TYPE = 'actual') q2
-   on q1.DEPARTMENT_ID = q2.DEPARTMENT_ID AND
-       q1.PROV_ID = q2.PROV_ID AND
-       q1.MRN = q2.MRN AND
-       q1.APPT_DTTM = q2.APPT_DTTM
-       WHERE q2.DEPARTMENT_ID IS NULL
-       AND q2.PROV_ID IS NULL")
+(SELECT * FROM \"utilization_table_new\" WHERE UTIL_TYPE = 'actual' AND PAT_ENC_CSN_ID IS NOT NULL) q2
+   on q1.PAT_ENC_CSN_ID = q2.PAT_ENC_CSN_ID
+       WHERE q2.PAT_ENC_CSN_ID IS NULL")
 
 missing_actual_data <- dbGetQuery(conn, missing_actual_data_query)
 missing_actual_data <- missing_actual_data %>% select(-SCHEDULE_TO_ACTUAL_CONVERSION, -APPT_START, -APPT_END, -UTIL_TYPE)
