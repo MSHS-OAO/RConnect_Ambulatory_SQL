@@ -6,14 +6,14 @@ library(odbc)
 library(glue)
 
 conn <- dbConnect(odbc(), "OAO Cloud DB")
-utilization_tbl <- tbl(conn, "utilization_table")
+utilization_tbl <- tbl(conn, "utilization_table_new")
 
 ##SQL query that returns rows that are in scheduled but not in actual
 missing_actual_data_query <- glue("SELECT q1.*
 FROM
-(SELECT * FROM \"utilization_table\" WHERE UTIL_TYPE = 'scheduled') q1
+(SELECT * FROM \"utilization_table_new\" WHERE UTIL_TYPE = 'scheduled') q1
 LEFT JOIN
-(SELECT * FROM \"utilization_table\" WHERE UTIL_TYPE = 'actual') q2
+(SELECT * FROM \"utilization_table_new\" WHERE UTIL_TYPE = 'actual') q2
    on q1.DEPARTMENT_ID = q2.DEPARTMENT_ID AND
        q1.PROV_ID = q2.PROV_ID AND
        q1.MRN = q2.MRN AND
@@ -22,9 +22,9 @@ LEFT JOIN
        AND q2.PROV_ID IS NULL")
 
 missing_actual_data <- dbGetQuery(conn, missing_actual_data_query)
+missing_actual_data <- missing_actual_data %>% select(-SCHEDULE_TO_ACTUAL_CONVERSION, -APPT_START, -APPT_END, -UTIL_TYPE)
 
-
-missing_data_processing <- function(missing_data) {    
+# missing_data_processing <- function(missing_data) {    
   ## Create new column if row was converted from scheduled to actual
   # Pull scheduled data for specific missing encounters time stamps
   median_roomtime_mapping <- utilization_tbl %>% 
@@ -41,14 +41,14 @@ missing_data_processing <- function(missing_data) {
   
   # Convert pulled missing scheudled ecnouters to actual 
    mapped_actual_data <- mapped_actual_data %>% 
-   mutate(Schedule_to_Actual_Conversion = ifelse(is.na(median_room_time), TRUE, FALSE)) %>%
-   mutate(UTIL_TYPE = 'actual')%>% 
-   mutate(median_room_time = ifelse(is.na(median_room_time),SUM, median_room_time))
+   mutate(SCHEDULE_TO_ACTUAL_CONVERSION = ifelse(is.na(median_room_time), "TRUE", "FALSE")) %>%
+   mutate(util_type = 'actual')%>% 
+   mutate(median_room_time = ifelse(is.na(median_room_time),1.2*SUM, median_room_time))
    
    #mapped_actual_data <- mapped_actual_data %>% mutate(median_room_time =ifelse(median_room_time == 0 , 5, median_room_time))
    columns_to_remove <- c("H_07_00", "H_08_00", "H_09_00", "H_10_00", "H_11_00", "H_12_00", "H_13_00",
                            "H_14_00", "H_15_00", "H_16_00", "H_17_00", "H_18_00","H_19_00", "H_20_00")
-   mapped_actual_data <- mapped_actual_data %>% select(- c(colnames(columns_to_remove)))
+   mapped_actual_data <- mapped_actual_data %>% select(-c(all_of(columns_to_remove)))
    
    mapped_actual_data <- mapped_actual_data %>% mutate(Appt.Start = as.POSIXct(APPT_DTTM, format = "%H:%M"))
    mapped_actual_data <- mapped_actual_data %>% mutate(Appt.End = as.POSIXct(Appt.Start + median_room_time*60, format = "%H:%M"))
@@ -128,13 +128,13 @@ missing_data_processing <- function(missing_data) {
    
    
    
-   mapped_actual_data <- mapped_actual_data[,c(names(mapped_actual_data[,1:18]), timeOptionsHr) ]
+   # mapped_actual_data <- mapped_actual_data[,c(names(mapped_actual_data[,1:19]), timeOptionsHr) ]
    
    # check this ,
    mapped_actual_data <- mapped_actual_data %>% 
      select(DEPARTMENT_ID, PROV_ID, RESOURCES,  VISIT_METHOD, PROV_ID, APPT_DATE_YEAR, APPT_MONTH_YEAR, 
             APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS,
-            MRN, APPT_TYPE, median_room_time, Schedule_to_Actual_Conversion, all_of(timeOptionsHr)) 
+            MRN, APPT_TYPE, median_room_time, SCHEDULE_TO_ACTUAL_CONVERSION, all_of(timeOptionsHr), PAT_ENC_CSN_ID,util_type) 
    
    
    mapped_actual_data$sum <- rowSums(mapped_actual_data[,which(colnames(mapped_actual_data)=="00:00"): which(colnames(mapped_actual_data) =="23:00")], na.rm = T)
@@ -142,15 +142,15 @@ missing_data_processing <- function(missing_data) {
    mapped_actual_data <- mapped_actual_data %>% mutate(actual = as.numeric(difftime(Appt.End, Appt.Start, units = "mins")))
    mapped_actual_data <- mapped_actual_data  %>% mutate(comparison = ifelse(sum == actual, 0, 1))
    mapped_actual_data <- mapped_actual_data %>% filter(comparison == 0)
-}
-   
+#}
+
    mapped_actual_data <- mapped_actual_data %>% select(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, 
                                                        APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, 
                                                        Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, sum, util_type, 
-                                                       APPT_TYPE, all_of(timeOptionsHr_filter), Schedule_to_Actual_Conversion)
+                                                       APPT_TYPE, all_of(timeOptionsHr_filter), SCHEDULE_TO_ACTUAL_CONVERSION, PAT_ENC_CSN_ID)
 
    
-   TABLE_NAME <-  "utilization_table"
+   TABLE_NAME <-  "utilization_table_new"
    
    # section to write mapped_actual_data to database
    get_values <- function(x, table_name){
@@ -189,6 +189,7 @@ missing_data_processing <- function(missing_data) {
      `19:00` <-  x[32]
      `20:00` <-  x[33]
      SCHEDULE_TO_ACTUAL_CONVERSION <- x[34]
+     PAT_ENC_CSN_ID <- x[35]
      
      
      values <- glue("INTO \"{table_name}\" (DEPARTMENT_ID, 
@@ -196,7 +197,7 @@ missing_data_processing <- function(missing_data) {
                    APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, 
                    APPT_DUR, Appt_Start, Appt_End, APPT_DTTM, APPT_STATUS, MRN, SUM, util_type, APPT_TYPE,
                    H_07_00, H_08_00, H_09_00, H_10_00, H_11_00, H_12_00, H_13_00, 
-                   H_14_00, H_15_00, H_16_00, H_17_00, H_18_00, H_19_00, H_20_00, SCHEDULE_TO_ACTUAL_CONVERSION 
+                   H_14_00, H_15_00, H_16_00, H_17_00, H_18_00, H_19_00, H_20_00, SCHEDULE_TO_ACTUAL_CONVERSION, PAT_ENC_CSN_ID
                    )
                    VALUES('{DEPARTMENT_ID}', '{RESOURCES}','{PROV_ID}',
                    '{VISIT_METHOD}',  TO_DATE('{APPT_DATE_YEAR}', 'YYYY-MM-DD'),
@@ -205,7 +206,7 @@ missing_data_processing <- function(missing_data) {
                     TO_DATE('{Appt.End}', 'YYYY-MM-DD HH24:MI:SS'), TO_DATE('{APPT_DTTM}', 'YYYY-MM-DD HH24:MI:SS'),
                     '{APPT_STATUS}', '{MRN}', '{sum}', '{util_type}', '{APPT_TYPE}', '{`07:00`}','{`08:00`}','{`09:00`}', '{`10:00`}',
                     '{`11:00`}','{`12:00`}', '{`13:00`}', '{`14:00`}','{`15:00`}',
-                    '{`16:00`}', '{`17:00`}','{`18:00`}','{`19:00`}','{`20:00`}', '{SCHEDULE_TO_ACTUAL_CONVERSION}')")
+                    '{`16:00`}', '{`17:00`}','{`18:00`}','{`19:00`}','{`20:00`}', '{SCHEDULE_TO_ACTUAL_CONVERSION}', '{PAT_ENC_CSN_ID}')")
      
      
      return(values)
@@ -248,13 +249,14 @@ missing_data_processing <- function(missing_data) {
             `18:00`= as.numeric(`18:00`),
             `19:00`= as.numeric(`19:00`),
             `20:00`= as.numeric(`20:00`),
-            SCHEDULE_TO_ACTUAL_CONVERSION = as.character(SCHEDULE_TO_ACTUAL_CONVERSION))%>%
+            SCHEDULE_TO_ACTUAL_CONVERSION = as.character(SCHEDULE_TO_ACTUAL_CONVERSION),
+            PAT_ENC_CSN_ID <- as.character(PAT_ENC_CSN_ID))%>%
      
      select(DEPARTMENT_ID, RESOURCES, PROV_ID, 
             VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, 
             APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, 
             APPT_STATUS, MRN,sum, util_type, APPT_TYPE, `07:00`,`08:00`,`09:00`, `10:00`,`11:00`,`12:00`,
-            `13:00`, `14:00`,`15:00`,`16:00`,`17:00`,`18:00`,`19:00`,`20:00`, SCHEDULE_TO_ACTUAL_CONVERSION )
+            `13:00`, `14:00`,`15:00`,`16:00`,`17:00`,`18:00`,`19:00`,`20:00`, SCHEDULE_TO_ACTUAL_CONVERSION,PAT_ENC_CSN_ID )
    
    special_character_columns <- c("RESOURCES", "VISIT_METHOD", "APPT_STATUS", "APPT_TYPE")
    mapped_actual_data <-  mapped_actual_data %>% mutate_at(all_of(special_character_columns), ~ str_replace(., "'", "''"))

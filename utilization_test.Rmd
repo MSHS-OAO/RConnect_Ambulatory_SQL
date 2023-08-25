@@ -22,7 +22,7 @@ library(doParallel)
 conn <- dbConnect(odbc(), "OAO Cloud DB")
 start_date <- Sys.Date()
 
-for (j in 2:599) {
+for (j in 1:33) {
   # date_1 <- "2022-01-01"
    # date_1 <- start_date - 21
    # date_2 <- start_date
@@ -147,31 +147,32 @@ for (j in 2:599) {
   data.hour.arrived.non.na <- data.hour.arrived %>% filter(SCHEDULE_TO_ACTUAL_CONVERSION == "FALSE")
   data.hour.arrived.na <- data.hour.arrived %>% filter(SCHEDULE_TO_ACTUAL_CONVERSION == "TRUE")
   
-  utilization_tbl <- tbl(conn, "utilization_table")
+  # utilization_tbl <- tbl(conn, "utilization_table")
+  # 
+  # median_roomtime_mapping <- utilization_tbl %>%
+  #                            filter(UTIL_TYPE == 'actual') %>%
+  #                            group_by(DEPARTMENT_ID, APPT_TYPE) %>%
+  #                            summarise(median_room_time = median(SUM, na.rm = TRUE)) %>%
+  #                            collect()
+  # 
+  # 
+  # mapped_actual_data <- left_join(data.hour.arrived.na, median_roomtime_mapping)
+  # mapped_actual_data <- mapped_actual_data %>%
+  #  mutate(SCHEDULE_TO_ACTUAL_CONVERSION = ifelse(is.na(median_room_time), "TRUE", "FALSE")) %>%
+  #  mutate(APPT_DUR = ifelse(is.na(median_room_time),1.2*APPT_DUR, median_room_time))
+  # 
+  # data.hour.arrived.na <- mapped_actual_data %>% select(-median_room_time)
+  # 
+  # 
+  # data.hour.arrived.na <- data.hour.arrived.na %>% group_by(DEPARTMENT_ID, PROV_ID, MRN, APPT_DTTM) %>% 
+  #                         mutate(ROOMIN_DTTM = max(CHECKIN_DTTM, APPT_DTTM, na.rm = T)) %>%
+  #                         mutate(VISIT_END_DTTM = ROOMIN_DTTM + APPT_DUR*60)
+  # 
+  # data.hour.arrived.na <- data.hour.arrived.na %>% mutate(SCHEDULE_TO_ACTUAL_CONVERSION = as.character(SCHEDULE_TO_ACTUAL_CONVERSION))
+  # 
+  # data.hour.arrived <- rbind(data.hour.arrived.na, data.hour.arrived.non.na) %>% select(-CHECKIN_DTTM)
 
-  median_roomtime_mapping <- utilization_tbl %>%
-                             filter(UTIL_TYPE == 'actual') %>%
-                             group_by(DEPARTMENT_ID, APPT_TYPE) %>%
-                             summarise(median_room_time = median(SUM, na.rm = TRUE)) %>%
-                             collect()
-
-
-  mapped_actual_data <- left_join(data.hour.arrived.na, median_roomtime_mapping)
-  mapped_actual_data <- mapped_actual_data %>%
-   mutate(SCHEDULE_TO_ACTUAL_CONVERSION = ifelse(is.na(median_room_time), "TRUE", "FALSE")) %>%
-   mutate(APPT_DUR = ifelse(is.na(median_room_time),1.2*APPT_DUR, median_room_time))
-
-  data.hour.arrived.na <- mapped_actual_data %>% select(-median_room_time)
-  
-  
-  data.hour.arrived.na <- data.hour.arrived.na %>% group_by(DEPARTMENT_ID, PROV_ID, MRN, APPT_DTTM) %>% 
-                          mutate(ROOMIN_DTTM = max(CHECKIN_DTTM, APPT_DTTM, na.rm = T)) %>%
-                          mutate(VISIT_END_DTTM = ROOMIN_DTTM + APPT_DUR*60)
-  
-  data.hour.arrived.na <- data.hour.arrived.na %>% mutate(SCHEDULE_TO_ACTUAL_CONVERSION = as.character(SCHEDULE_TO_ACTUAL_CONVERSION))
-  
-  data.hour.arrived <- rbind(data.hour.arrived.na, data.hour.arrived.non.na) %>% select(-CHECKIN_DTTM)
-
+  data.hour.arrived <- data.hour.arrived.non.na  %>% select(-CHECKIN_DTTM)
   
   ########### Analysis of % of visits with actual visit start and end times ############
   data.hour.arrived  <- data.hour.arrived  %>% mutate(Appt.Start = floor_date(ROOMIN_DTTM, unit = "mins"),
@@ -266,15 +267,17 @@ for (j in 2:599) {
   data.hour.arrived <- data.hour.arrived %>% select(-VISIT_END_DTTM, -ROOMIN_DTTM)
   
   
-  missing_arrived_rows <- anti_join(data.hour.scheduled, data.hour.arrived, by = c("DEPARTMENT_ID"= "DEPARTMENT_ID", "PROV_ID" = "PROV_ID", "MRN" = "MRN", "APPT_DTTM" = "APPT_DTTM", "APPT_TYPE" = "APPT_TYPE"))
+  # missing_arrived_rows <- anti_join(data.hour.scheduled, data.hour.arrived, by = c("DEPARTMENT_ID"= "DEPARTMENT_ID", "PROV_ID" = "PROV_ID", "MRN" = "MRN", "APPT_DTTM" = "APPT_DTTM", "APPT_TYPE" = "APPT_TYPE"))
+  # 
+  # 
+  # missing_arrived_rows <- missing_arrived_rows %>% mutate(util_type = "actual",
+  #                                                         SCHEDULE_TO_ACTUAL_CONVERSION = "TRUE")
   
   
-  missing_arrived_rows <- missing_arrived_rows %>% mutate(util_type = "actual",
-                                                          SCHEDULE_TO_ACTUAL_CONVERSION = "TRUE")
   
-  
-  
-  utilization.data <- rbind(data.hour.scheduled, data.hour.arrived, missing_arrived_rows) ##USe inner join insetad of bind
+  # utilization.data <- rbind(data.hour.scheduled, data.hour.arrived, missing_arrived_rows) ##USe inner join insetad of bind
+    utilization.data <- rbind(data.hour.scheduled, data.hour.arrived) ##USe inner join insetad of bind
+
 
   
   utilization.data <- utilization.data %>% select(DEPARTMENT_ID, RESOURCES, PROV_ID, VISIT_METHOD, APPT_DATE_YEAR, APPT_MONTH_YEAR, APPT_YEAR, APPT_WEEK, APPT_DAY, HOLIDAY, APPT_DUR, Appt.Start, Appt.End, APPT_DTTM, APPT_STATUS, MRN, sum, util_type, APPT_TYPE, all_of(timeOptionsHr_filter), SCHEDULE_TO_ACTUAL_CONVERSION, PAT_ENC_CSN_ID)
@@ -282,7 +285,7 @@ for (j in 2:599) {
   
 
   
-  TABLE_NAME <-  "utilization_table"
+  TABLE_NAME <-  "utilization_table_new"
   
   # function to convert the record of data frame to into statement
   get_values <- function(x,table_name){
@@ -455,9 +458,9 @@ for (j in 2:599) {
   }
   )
   registerDoSEQ()
-  print(j)
+  #print(j)
 }
 
-#source("actual_encouters_missing_processing.R")  
+source("actual_encouters_missing_processing.R")  
 ```
 
