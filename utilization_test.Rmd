@@ -22,7 +22,7 @@ library(doParallel)
 conn <- dbConnect(odbc(), "OAO Cloud DB")
 start_date <- Sys.Date()
 
-for (j in 1:33) {
+for (j in 1:601) {
   # date_1 <- "2022-01-01"
    # date_1 <- start_date - 21
    # date_2 <- start_date
