@@ -44,7 +44,7 @@ missing_actual_data <- missing_actual_data %>% select(-SCHEDULE_TO_ACTUAL_CONVER
    mapped_actual_data <- mapped_actual_data %>% 
    mutate(SCHEDULE_TO_ACTUAL_CONVERSION = ifelse(is.na(median_room_time), "TRUE", "FALSE")) %>%
    mutate(util_type = 'actual')%>% 
-   mutate(median_room_time = ifelse(is.na(median_room_time),1.2*SUM, median_room_time))
+   mutate(median_room_time = ifelse(is.na(median_room_time),SUM, median_room_time))
    
    #mapped_actual_data <- mapped_actual_data %>% mutate(median_room_time =ifelse(median_room_time == 0 , 5, median_room_time))
    columns_to_remove <- c("H_07_00", "H_08_00", "H_09_00", "H_10_00", "H_11_00", "H_12_00", "H_13_00",

@@ -22,13 +22,13 @@ library(doParallel)
 conn <- dbConnect(odbc(), "OAO Cloud DB")
 start_date <- Sys.Date()
 
-#for (j in 4:10) {
+for (j in 1:238) {
   # date_1 <- "2022-01-01"
-   date_1 <- start_date - 21
-   date_2 <- start_date
+   # date_1 <- start_date - 14
+   # date_2 <- start_date
 
-   # date_1 <- start_date - j
-   # date_2 <- start_date - j
+   date_1 <- start_date - j
+   date_2 <- start_date - j
 
   utilization_query_scheduled <- glue("SELECT a.DEPARTMENT_ID, a.RESOURCES, a.PROV_ID, a.VISIT_METHOD, a.APPT_DATE_YEAR, a.APPT_MONTH_YEAR, a.APPT_YEAR, a.APPT_WEEK, a.APPT_DAY, a.HOLIDAY, a.APPT_DUR, a.APPT_DTTM, a.APPT_STATUS, a.MRN, a.VISIT_END_DTTM, a.ROOMIN_DTTM, a.APPT_TYPE, a.CHECKIN_DTTM, a.PAT_ENC_CSN_ID
       FROM AMBULATORY_ACCESS a
@@ -146,6 +146,8 @@ start_date <- Sys.Date()
   data.hour.arrived <-  data.hour.arrived %>% mutate(SCHEDULE_TO_ACTUAL_CONVERSION = ifelse(is.na(ROOMIN_DTTM), "TRUE", "FALSE"))
   data.hour.arrived.non.na <- data.hour.arrived %>% filter(SCHEDULE_TO_ACTUAL_CONVERSION == "FALSE")
   data.hour.arrived.na <- data.hour.arrived %>% filter(SCHEDULE_TO_ACTUAL_CONVERSION == "TRUE")
+  
+  data.hour.arrived.non.na <- data.hour.arrived.non.na %>% filter(!(ROOMIN_DTTM == VISIT_END_DTTM))
 
   # utilization_tbl <- tbl(conn, "utilization_table")
   #
@@ -177,6 +179,8 @@ start_date <- Sys.Date()
   ########### Analysis of % of visits with actual visit start and end times ############
   data.hour.arrived  <- data.hour.arrived  %>% mutate(Appt.Start = floor_date(ROOMIN_DTTM, unit = "mins"),
                                                       Appt.End = floor_date( VISIT_END_DTTM, unit = "mins"))
+  
+  
 
 
 
@@ -459,7 +463,7 @@ start_date <- Sys.Date()
   )
   registerDoSEQ()
   #print(j)
-#}
+}
 
 source("actual_encouters_missing_processing.R")  
 ```
