@@ -123,7 +123,7 @@ missing_actual_data <- missing_actual_data %>% select(-SCHEDULE_TO_ACTUAL_CONVER
      
      for(i in 1:length(column_to_add)){
        
-       dmapped_actual_data[[column_to_add[i]]] <- NA
+       mapped_actual_data[[column_to_add[i]]] <- NA
      }
    }
    
