@@ -22,7 +22,7 @@ library(doParallel)
 conn <- dbConnect(odbc(), "OAO Cloud DB")
 start_date <- Sys.Date()
 
-for (j in 230:239) {
+for (j in 240:604) {
   # date_1 <- "2022-01-01"
    # date_1 <- start_date - 14
    # date_2 <- start_date
@@ -465,6 +465,6 @@ for (j in 230:239) {
   #print(j)
 }
 
-source("actual_encouters_missing_processing.R")  
+#source("actual_encouters_missing_processing.R")  
 ```
 
