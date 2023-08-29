@@ -11,7 +11,7 @@ timeOptionsHr_filter <- c("07:00","08:00","09:00", "10:00","11:00","12:00","13:0
 
 
 conn <- dbConnect(odbc(), "OAO Cloud DB")
-utilization_tbl <- tbl(conn, "utilization_table_new")
+utilization_tbl <- tbl(conn, "utilization_table")
 
 ##SQL query that returns rows that are in scheduled but not in actual
 missing_actual_data_query <- glue("SELECT q1.*
@@ -151,7 +151,7 @@ missing_actual_data <- missing_actual_data %>% select(-SCHEDULE_TO_ACTUAL_CONVER
                                                        APPT_TYPE, all_of(timeOptionsHr_filter), SCHEDULE_TO_ACTUAL_CONVERSION, PAT_ENC_CSN_ID)
 
    
-   TABLE_NAME <-  "utilization_table_new"
+   TABLE_NAME <-  "utilization_table"
    
    # section to write mapped_actual_data to database
    get_values <- function(x, table_name){

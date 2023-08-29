@@ -289,7 +289,7 @@ start_date <- Sys.Date()
 
 
 
-  TABLE_NAME <-  "utilization_table_new"
+  TABLE_NAME <-  "utilization_table"
 
   # function to convert the record of data frame to into statement
   get_values <- function(x,table_name){
