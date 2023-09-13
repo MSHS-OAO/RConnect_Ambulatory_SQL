@@ -1,0 +1,91 @@
+---
+title: "new_slot_SQL"
+output: html_document
+date: "2023-09-12"
+---
+
+```{r setup, include=FALSE}
+library(glue)
+library(odbc)
+library(tidyverse)
+library(DBI)
+library(pool)
+
+date_1 <- "2021-01-01"
+date_2 <- Sys.Date() - 1
+
+
+### Maping Table
+ambulatory_available_hours_drop <- glue("DROP TABLE AMBULATORY_AVAILABLE_HOURS_SQL")
+ambulatory_available_hours_query <- glue("CREATE TABLE AMBULATORY_AVAILABLE_HOURS_SQL AS
+SELECT d.DEPARTMENT_ID, d.PROV_ID, d.SLOT_BEGIN_TIME, d.relevant_slot, e.CAMPUS, e.CAMPUS_SPECIALTY, e.DEPARTMENT, e.RESOURCES, e.PROVIDER , e.APPT_DATE_YEAR, e.APPT_DAY, e.HOLIDAY  
+FROM(
+select c.DEPARTMENT_NAME, c.DEPARTMENT_ID, c.PROV_NM_WID, c.PROV_ID, c.APPT_YEAR, c.APPT_MONTH, c.APPT_DATE_YEAR , c.SLOT_BEGIN_TIME, c.SLOT_LENGTH,
+COUNT(*) AS AVAIL_MIN,
+'Yes' AS RELEVANT_SLOT
+FROM(
+SELECT b.*,
+TO_DATE(SLOT_DATE) AS APPT_DATE_YEAR 
+FROM(
+SELECT a.*,
+EXTRACT(YEAR from TO_DATE(SLOT_DATE)) AS APPT_YEAR,
+EXTRACT(MONTH from TO_DATE(SLOT_DATE)) AS APPT_MONTH
+FROM V_AVAILABILITY a 
+  ) b
+   WHERE b.APPT_YEAR = '2023' AND TO_DATE(SLOT_DATE) <  TRUNC( SYSDATE )+1 AND b.UNAVAILABLE_RSN_C is NULL
+   ) c
+   GROUP BY c.DEPARTMENT_NAME, c.DEPARTMENT_ID, c.PROV_NM_WID, c.PROV_ID, c.APPT_YEAR, c.APPT_MONTH, c.APPT_DATE_YEAR ,     c.SLOT_BEGIN_TIME, c.SLOT_LENGTH
+    )d
+     INNER JOIN AMBULATROY_ACCESS_AUGUST e on d.DEPARTMENT_ID = e.DEPARTMENT_ID AND d.PROV_ID = e.PROV_ID AND     d.SLOT_BEGIN_TIME = e.APPT_DTTM")
+
+
+ambulatory_available_hours_index <- glue("create INDEX amb_available_hours_index on AMBULATROY_AVAILABLE_HOURS_SQL (APPT_DATE_YEAR, DEPARTMENT)")
+
+AMBULATROY_SLOT_ARRIVED_MIN_SQL_drop <- glue("DROP TABLE AMBULATORY_SLOT_ARRIVED_MIN_SQL")
+
+AMBULATROY_SLOT_ARRIVED_MIN_SQL_quary <- glue("CREATE TABLE AMBULATORY_SLOT_ARRIVED_MIN_SQL AS
+ select a.CAMPUS_NEW, a. CAMPUS_SPECIALTY_NEW, a.DEPARTMENT, a.RESOURCES, a.PROVIDER, 
+a.APPT_DATE_YEAR, a.APPT_DAY, a.Holiday
+from AMBULATROY_ACCESS_AUGUST a where APPT_STATUS = 'Arrived'")
+
+ambulatory_slot_arrived_index <- glue("create INDEX amb_slot_arrived_index on AMBULATORY_SLOT_ARRIVED_MIN_SQ (APPT_DATE_YEAR, DEPARTMENT)")
+
+
+###Query Execution
+  tryCatch({
+        conn <- dbConnect(drv = odbc(), "OAO Cloud DB Staging", timeout = 30)
+        dbBegin(conn)
+            if(dbExistsTable(conn, "AMBULATORY_AVAILABLE_HOURS_SQL")){
+          dbExecute(conn, ambulatory_available_hours_drop) 
+            }
+        dbExecute(conn, ambulatory_available_hours_query)
+        dbExecute(conn, ambulatory_available_hours_index)
+        
+        
+        if(dbExistsTable(conn, "TABLE AMBULATORY_SLOT_ARRIVED_MIN_SQL")){
+          dbExecute(conn, AMBULATORY_SLOT_ARRIVED_MIN_SQL_drop) 
+         }
+         dbExecute(conn, AMBULATORY_SLOT_ARRIVED_MIN_SQL_query)
+         dbExecute(conn, ambulatory_slot_arrived_index)
+
+        
+        dbCommit(conn)
+        dbDisconnect(conn)
+        print("success")
+
+  },
+  
+  error = function(err){
+    print(err)
+    dbRollback(conn)
+    dbDisconnect(conn)
+  })
+
+
+
+
+
+
+
+```
+
