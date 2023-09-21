@@ -85,7 +85,7 @@ EXTRACT(year from c.APPT_DTTM) Appt_Year,
                        REGEXP_SUBSTR(c.CLASS_PT, 'NEW') AS NEW_PT3_RAW,
                        CONCAT('Q',TO_CHAR(c.APPT_DTTM, 'Q')) AS APPT_QUARTER,
                        CONCAT('Q',TO_CHAR(c.APPT_MADE_DTTM, 'Q')) AS APPT_MADE_QUARTER,
-                        EXTRACT(year from c.APPT_MADE_DTTM) Appt_MADE_Year
+                        EXTRACT(year from c.APPT_MADE_DTTM) AS Appt_MADE_Year
     FROM(
      SELECT i.CAMPUS AS CAMPUS_NEW, i.CAMPUS_SPECIALTY AS CAMPUS_SPECIALTY_NEW, i.DEPARTMENT,d.*, b.holiday, f.DAYS_SUBTRACT, h.APPT_SOURCE_NEW AS APPT_SOURCE_MAP, j.SCHEDULE_GROUPING
     FROM(
