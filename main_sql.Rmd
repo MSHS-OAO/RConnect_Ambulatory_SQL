@@ -86,7 +86,8 @@ EXTRACT(year from c.APPT_DTTM) Appt_Year,
                        CONCAT('Q',TO_CHAR(c.APPT_DTTM, 'Q')) AS APPT_QUARTER,
                        CONCAT('Q',TO_CHAR(c.APPT_MADE_DTTM, 'Q')) AS APPT_MADE_QUARTER,
                         EXTRACT(year from c.APPT_MADE_DTTM) AS Appt_MADE_Year,
-                        TO_CHAR(c.APPT_MADE_DTTM, 'mm-dd') AS Appt_Made_Date
+                        TO_CHAR(c.APPT_MADE_DTTM, 'mm-dd') AS Appt_Made_Date,
+                        TO_CHAR(c.APPT_MADE_DTTM, 'MON') AS Appt_MAde_Month
     FROM(
      SELECT i.CAMPUS AS CAMPUS_NEW, i.CAMPUS_SPECIALTY AS CAMPUS_SPECIALTY_NEW, i.DEPARTMENT,d.*, b.holiday, f.DAYS_SUBTRACT, h.APPT_SOURCE_NEW AS APPT_SOURCE_MAP, j.SCHEDULE_GROUPING
     FROM(
