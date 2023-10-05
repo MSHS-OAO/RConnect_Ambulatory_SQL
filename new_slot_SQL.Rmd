@@ -18,7 +18,10 @@ date_2 <- Sys.Date() - 1
 ### Maping Table
 ambulatory_available_hours_drop <- glue("DROP TABLE AMBULATORY_AVAILABLE_HOURS_SQL")
 ambulatory_available_hours_query <- glue("CREATE TABLE AMBULATORY_AVAILABLE_HOURS_SQL AS
-SELECT d.DEPARTMENT_ID, d.PROV_ID, d.SLOT_BEGIN_TIME, d.relevant_slot, d.SLOT_LENGTH, e.CAMPUS, e.CAMPUS_SPECIALTY, e.DEPARTMENT, e.RESOURCES, e.PROVIDER , e.APPT_DATE_YEAR, e.APPT_DAY, e.HOLIDAY, e.APPT_WEEK, e.APPT_MONTH_YEAR  
+SELECT f.*
+FROM(
+SELECT d.DEPARTMENT_ID, d.DEPARTMENT_NAME, d.PROV_ID, d.SLOT_BEGIN_TIME, d.relevant_slot, d.SLOT_LENGTH, e.CAMPUS, e.CAMPUS_SPECIALTY, e.DEPARTMENT, e.RESOURCES, e.PROVIDER , e.APPT_DATE_YEAR, 
+e.APPT_DAY, e.HOLIDAY, e.APPT_WEEK, e.APPT_MONTH_YEAR, e.PROV_NAME_WID, e.APPT_DTTM, e.APPT_MADE_DTTM, e.OVERBOOKED_YN 
 FROM(
 select c.DEPARTMENT_NAME, c.DEPARTMENT_ID, c.PROV_NM_WID, c.PROV_ID, c.APPT_YEAR, c.APPT_MONTH, c.APPT_DATE_YEAR , c.SLOT_BEGIN_TIME, c.SLOT_LENGTH,
 COUNT(*) AS AVAIL_MIN,
@@ -31,12 +34,22 @@ SELECT a.*,
 EXTRACT(YEAR from TO_DATE(SLOT_DATE)) AS APPT_YEAR,
 EXTRACT(MONTH from TO_DATE(SLOT_DATE)) AS APPT_MONTH
 FROM V_AVAILABILITY a 
-  ) b
-   WHERE TO_DATE(SLOT_DATE) <  TRUNC( SYSDATE )+1 AND b.UNAVAILABLE_RSN_C is NULL
-   ) c
-   GROUP BY c.DEPARTMENT_NAME, c.DEPARTMENT_ID, c.PROV_NM_WID, c.PROV_ID, c.APPT_YEAR, c.APPT_MONTH, c.APPT_DATE_YEAR ,     c.SLOT_BEGIN_TIME, c.SLOT_LENGTH
-    )d
-     INNER JOIN villea04.AMBULATORY_ACCESS e on d.DEPARTMENT_ID = e.DEPARTMENT_ID AND d.PROV_ID = e.PROV_ID AND     d.SLOT_BEGIN_TIME = e.APPT_DTTM")
+ ) b
+ WHERE TO_DATE(SLOT_DATE) <  TRUNC( SYSDATE )+1 AND b.UNAVAILABLE_RSN_C is NULL
+  ) c
+   GROUP BY c.DEPARTMENT_NAME, c.DEPARTMENT_ID, c.PROV_NM_WID, c.PROV_ID, c.APPT_YEAR, c.APPT_MONTH, c.APPT_DATE_YEAR , c.SLOT_BEGIN_TIME, c.SLOT_LENGTH
+   )d
+   INNER JOIN villea04.AMBULATORY_ACCESS e on d.DEPARTMENT_ID = e.DEPARTMENT_ID AND d.PROV_ID = e.PROV_ID AND  d.SLOT_BEGIN_TIME = e.APPT_DTTM
+    ) f
+     where f.relevant_slot = 'Yes'
+      ORDER BY f.DEPARTMENT_ID, f.PROV_NAME_WID, f.APPT_DTTM, f.APPT_MADE_DTTM DESC")
+      
+      
+ambulatory_delete_available_hours_query <- glue("DELETE FROM AMBULATORY_AVAILABLE_HOURS_SQL
+WHERE rowid not in
+(SELECT MIN(rowid)
+FROM AMBULATORY_AVAILABLE_HOURS_SQL
+GROUP BY DEPARTMENT_NAME, DEPARTMENT_ID, PROV_NAME_WID, APPT_DTTM, APPT_DATE_YEAR, OVERBOOKED_YN)")
 
 
 ambulatory_available_hours_index <- glue("create INDEX amb_available_hours_index on AMBULATORY_AVAILABLE_HOURS_SQL (APPT_DATE_YEAR, DEPARTMENT)")
@@ -63,7 +76,9 @@ FROM  villea04.AMBULATORY_ACCESS a where APPT_STATUS = 'Arrived') b
           dbExecute(conn, ambulatory_available_hours_drop) 
             }
         dbExecute(conn, ambulatory_available_hours_query)
+        dbExecute(conn, ambulatory_delete_available_hours_query)
         dbExecute(conn, ambulatory_available_hours_index)
+        
         
         
         if(dbExistsTable(conn, "TABLE AMBULATORY_SLOT_ARRIVED_MIN_SQL")){
