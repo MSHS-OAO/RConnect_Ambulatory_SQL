@@ -92,7 +92,7 @@ EXTRACT(year from c.APPT_DTTM) Appt_Year,
      SELECT i.CAMPUS AS CAMPUS_NEW, i.CAMPUS_SPECIALTY AS CAMPUS_SPECIALTY_NEW, i.DEPARTMENT,d.*, b.holiday, f.DAYS_SUBTRACT, h.APPT_SOURCE_NEW AS APPT_SOURCE_MAP, j.SCHEDULE_GROUPING
     FROM(
  SELECT a.PROV_NAME_WID, a.PROV_ID, a.DEPARTMENT_ID AS Department_ID, a.REFERRING_PROV_NAME_WID AS Refferring_Provider, a.CYCLE_TIME_MINUTES AS cycleTime,
-                             a.MRN, a.PAT_NAME AS Patient_Name, a.ZIP_CODE, a.CITY, a.COUNTY, a.STATE, a.BIRTH_DATE, a.FINCLASS AS Coverage,
+                             a.MRN, a.PAT_NAME AS Patient_Name, a.ZIP_CODE, a.BIRTH_DATE, a.FINCLASS AS Coverage,
                              a.APPT_MADE_DTTM, a.APPT_DTTM, a.PRC_NAME AS APPT_TYPE, a.APPT_LENGTH AS APPT_DUR, a.DERIVED_STATUS_DESC AS APPT_STATUS,
                              a.APPT_CANC_DTTM AS APPT_CANCEL_DTTM, a.CANCEL_REASON_NAME AS CANCEL_REASON,
                              a.SIGNIN_DTTM, a.PAGED_DTTM, a.CHECKIN_DTTM, a.ARVL_LIST_REMOVE_DTTM AS ARRIVAL_REMOVE_DTTM,
@@ -186,30 +186,30 @@ CASE
    WHEN (e.ZIP_CODE_LAYER_A = 'Out of NYS'  AND e.ZIP_CODE_LAYER_B is NULL)
      THEN
          CASE
-           WHEN e.STATES = 'NJ' THEN 'New Jersey'
-           WHEN e.STATES = 'CT' THEN 'Connecticut'
-           WHEN e.STATES = 'FL' THEN 'Florida'
-           WHEN e.STATES = 'PA' THEN 'Pennsylvania'
+           WHEN e.STATE = 'NJ' THEN 'New Jersey'
+           WHEN e.STATE = 'CT' THEN 'Connecticut'
+           WHEN e.STATE = 'FL' THEN 'Florida'
+           WHEN e.STATE = 'PA' THEN 'Pennsylvania'
            ELSE 'Other'
            END
     ELSE   e.ZIP_CODE_LAYER_B  
  END AS NEW_ZIP_CODE_LAYER_B,
  CASE 
    WHEN (e.ZIP_CODE_LAYER_A is NULL  AND 
-        ( e.STATES is NOT NULL OR e.STATES != 'NY')
+        ( e.STATE is NOT NULL OR e.STATE != 'NY')
         )
         THEN 'Out of NYS'
         ELSE e.ZIP_CODE_LAYER_A
 END AS NEW_ZIP_CODE_LAYER_A
 FROM(
-SELECT b.*, c.ZIP_CODE_LAYER_A, c.ZIP_CODE_LAYER_B, c.ZIP_CODE_LAYER_C, d.CITY, d.STATES, d.LATITUDE, d.LONGITUDE
+SELECT b.*, c.ZIP_CODE_LAYER_A, c.ZIP_CODE_LAYER_B, c.ZIP_CODE_LAYER_C, d.STATE, d.LATITUDE, d.LONGITUDE
 FROM(
 SELECT a.*,
  SUBSTR(a.ZIP_CODE, 1, 5) AS NEW_ZIP 
 FROM AMBULATORY_ACCESS a 
     ) b
     LEFT JOIN ZIP_CODE_LAYER c ON b.NEW_ZIP = c.ZIP_CODE 
-    LEFT JOIN ZIP_CITY_STATE d ON b.NEW_ZIP = d.ZIP 
+    LEFT JOIN ZIP_CITY_STATE_UPDATED d ON b.NEW_ZIP = d.ZIP_CODE_CHAR
        ) e
        
        )g")
