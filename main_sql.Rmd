@@ -16,8 +16,8 @@ date_2 <- Sys.Date() - 1
 reg_exp <- "\\[(.*?)\\]"
 
 ### Maping Table
-ambulatory_mapping_drop <- glue("DROP TABLE AMBULATORY_MAPPING")
-ambulatory_mapping_query <- glue("CREATE TABLE AMBULATORY_MAPPING AS
+ambulatory_mapping_drop <- glue("DROP TABLE AMBULATORY_MAPPING_TEST")
+ambulatory_mapping_query <- glue("CREATE TABLE AMBULATORY_MAPPING_TEST AS
 SELECT b.CAMPUS, b.CAMPUS_SPECIALTY, b.DEPARTMENT, b.DEPARTMENT_CLEAN, b.DEPARTMENT_ID, d.LAST_ARRIVED
 FROM(
 SELECT a.*, regexp_replace(DEPARTMENT,'_DEACTIVATED|X_','') AS DEPARTMENT_CLEAN,
@@ -37,16 +37,17 @@ FROM(
           ) d
           on b.DEPARTMENT_ID= d.DEPARTMENT_ID")
 
-ambulatory_mapping_index <- glue("CREATE index amb_mapping_index on AMBULATORY_MAPPING (CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, DEPARTMENT_ID)")
-ambulatory_mapping_grant <- glue("GRANT SELECT on AMBULATORY_MAPPING to kweons01")
+ambulatory_mapping_index <- glue("CREATE index amb_mapping_index_test on AMBULATORY_MAPPING_TEST (CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, DEPARTMENT_ID)")
+
+#ambulatory_mapping_grant <- glue("GRANT SELECT on AMBULATORY_MAPPING to kweons01")
 
 ###Provider mapping table
-ambulatory_provider_mapping <- glue("CREATE TABLE AMBULATORY_PROVIDER_MAPPING AS
+ambulatory_provider_mapping <- glue("CREATE TABLE AMBULATORY_PROVIDER_MAPPING_TEST AS
 SELECT distinct TRIM(TRAILING FROM REGEXP_REPLACE(PROV_NAME_WID, '{reg_exp}', '')) AS Provider, PROV_ID FROM MV_DM_PATIENT_ACCESS
 WHERE CONTACT_DATE BETWEEN TO_DATE('2021-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
             AND TO_DATE(current_date - 1)")
             
-drop_ambulatory_provider_mapping <- glue("DROP TABLE AMBULATORY_PROVIDER_MAPPING")
+drop_ambulatory_provider_mapping <- glue("DROP TABLE AMBULATORY_PROVIDER_MAPPING_TEST")
 
 drop_access_query <- glue("DROP TABLE AMBULATORY_ACCESS_TEST")
 
@@ -117,9 +118,9 @@ FROM MV_DM_PATIENT_ACCESS a
                     ) c
                     )d
                     ) e")
-access_index <- glue("CREATE INDEX access_index on AMBULATORY_ACCESS_TEST (APPT_DATE_YEAR, DEPARTMENT)")
-access_index_npr <- glue("create index npr_index on AMBULATORY_ACCESS_TEST (APPT_MADE_DATE_YEAR, DEPARTMENT)")
-access_permission <- glue("GRANT SELECT ON AMBULATORY_ACCESS_TEST TO kweons01")
+access_index <- glue("CREATE INDEX access_index_test on AMBULATORY_ACCESS_TEST (APPT_DATE_YEAR, DEPARTMENT)")
+access_index_npr <- glue("create index npr_index_test on AMBULATORY_ACCESS_TEST (APPT_MADE_DATE_YEAR, DEPARTMENT)")
+#access_permission <- glue("GRANT SELECT ON AMBULATORY_ACCESS TO kweons01")
 access_permission_dev <- glue("GRANT SELECT ON AMBULATORY_ACCESS_TEST TO OAO_DEVELOPMENT")
 access_permission_prod <- glue("GRANT SELECT ON AMBULATORY_ACCESS_TEST TO OAO_PRODUCTION")
 
@@ -132,14 +133,14 @@ bin_roomin_visit_end <- glue("begin bin_hist('AMBULATORY_ACCESS_TEST', 'ROOMINTO
 bin_dttm_checkin <- glue("begin bin_hist('AMBULATORY_ACCESS_TEST', 'DTTMTOCHECKIN', 'bin_dttm_checkin', 5, 60, -60); end;")
 
 ###Table specifically for global filters
-drop_ambulatory_filters_query <- glue("DROP TABLE AMBULATORY_FILTERS")
-ambulatory_filters_query <- glue("CREATE TABLE AMBULATORY_FILTERS AS
+drop_ambulatory_filters_query <- glue("DROP TABLE AMBULATORY_FILTERS_TEST")
+ambulatory_filters_query <- glue("CREATE TABLE AMBULATORY_FILTERS_TEST AS
 SELECT DISTINCT CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, PROVIDER, RESOURCES, VISIT_METHOD, APPT_TYPE FROM AMBULATORY_ACCESS_TEST")
 
 
 ## Slot Table
-drop_slot_query <- glue("DROP TABLE AMBULATORY_SLOT")
-slot_query <- glue("CREATE TABLE AMBULATORY_SLOT AS
+drop_slot_query <- glue("DROP TABLE AMBULATORY_SLOT_TEST")
+slot_query <- glue("CREATE TABLE AMBULATORY_SLOT_TEST AS
 SELECT c.CAMPUS, c.CAMPUS_SPECIALTY, c.DEPARTMENT AS DEPARTMENT_NAME, b.*, b.APPT_DATE_YEAR - f.DAYS_SUBTRACT AS APPT_WEEK
 FROM (
     SELECT a.DEPARTMENT_ID,
@@ -173,7 +174,7 @@ FROM (
     LEFT JOIN AMBULATORY_MAPPING c on b.DEPARTMENT_ID = c.DEPARTMENT_ID  
     LEFT JOIN SUBTRACT_DAYS f on b.APPT_DAY = f.WEEKDAY")
     
-    slot_index <- glue("CREATE index slot_index on AMBULATORY_SLOT (APPT_DATE_YEAR, DEPARTMENT_NAME)")
+    slot_index <- glue("CREATE index slot_index_test on AMBULATORY_SLOT_TEST (APPT_DATE_YEAR, DEPARTMENT_NAME)")
 
 
 
@@ -222,14 +223,14 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
   tryCatch({
         conn <- dbConnect(drv = odbc(), "OAO Cloud DB", timeout = 30)
         dbBegin(conn)
-            if(dbExistsTable(conn, "AMBULATORY_MAPPING")){
+            if(dbExistsTable(conn, "AMBULATORY_MAPPING_TEST")){
           dbExecute(conn, ambulatory_mapping_drop) 
             }
         dbExecute(conn, ambulatory_mapping_query)
         dbExecute(conn, ambulatory_mapping_index)
-        dbExecute(conn, ambulatory_mapping_grant)
+        #dbExecute(conn, ambulatory_mapping_grant)
         
-        if(dbExistsTable(conn, "AMBULATORY_PROVIDER_MAPPING")){
+        if(dbExistsTable(conn, "AMBULATORY_PROVIDER_MAPPING_TEST")){
           dbExecute(conn, drop_ambulatory_provider_mapping) 
          }
          dbExecute(conn, ambulatory_provider_mapping)
@@ -241,7 +242,7 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
         dbExecute(conn, access_query)
         dbExecute(conn, access_index)
         dbExecute(conn, access_index_npr)
-        dbExecute(conn, access_permission)
+        #dbExecute(conn, access_permission)
         dbExecute(conn, access_permission_dev)
         dbExecute(conn, access_permission_prod)
         dbExecute(conn, bin_roomin)
@@ -251,7 +252,7 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
         
 
         
-        if(dbExistsTable(conn, "AMBULATORY_FILTERS")){
+        if(dbExistsTable(conn, "AMBULATORY_FILTERS_TEST")){
           dbExecute(conn, drop_ambulatory_filters_query)
         }
         dbExecute(conn, ambulatory_filters_query)
@@ -263,7 +264,7 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
         #dbExecute(conn, slot_index)
 
         
-        if(dbExistsTable(conn, "AMBULATORY_POPULATION")){
+        if(dbExistsTable(conn, "AMBULATORY_POPULATION_TEST")){
           dbExecute(conn, drop_population_query)
         }
         dbExecute(conn, population_query)
@@ -283,8 +284,8 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
 #source("utilization.R")
 
 ## Grouped Access Table
-access_summary_drop <- glue("DROP TABLE AMBULATORY_ACCESS_SUMMARY_TABLE")
-access_summary_query <- glue("CREATE TABLE AMBULATORY_ACCESS_SUMMARY_TABLE AS
+access_summary_drop <- glue("DROP TABLE AMBULATORY_ACCESS_SUMMARY_TABLE_TEST")
+access_summary_query <- glue("CREATE TABLE AMBULATORY_ACCESS_SUMMARY_TABLE_TEST AS
 SELECT
     CAMPUS,
     CAMPUS_SPECIALTY,
@@ -315,12 +316,12 @@ GROUP BY
     NEW_PT2,
     NEW_PT3")
     
-    access_summary_index <- glue("create INDEX access_index_summary on AMBULATORY_ACCESS_SUMMARY_TABLE (APPT_DATE_YEAR, DEPARTMENT)")
+    access_summary_index <- glue("create INDEX access_index_summary_test on AMBULATORY_ACCESS_SUMMARY_TABLE_TEST (APPT_DATE_YEAR, DEPARTMENT)")
 
 
 ###Grouped NPR Table
-access_npr_summary_drop <- glue("DROP TABLE AMBULATORY_ACCESS_NPR_SUMMARY_TABLE")
-access_npr_summary <- glue("CREATE TABLE AMBULATORY_ACCESS_NPR_SUMMARY_TABLE AS
+access_npr_summary_drop <- glue("DROP TABLE AMBULATORY_ACCESS_NPR_SUMMARY_TABLE_TEST")
+access_npr_summary <- glue("CREATE TABLE AMBULATORY_ACCESS_NPR_SUMMARY_TABLE_TEST AS
 SELECT b.*, COUNT(*) AS total_appts, TO_CHAR(b.APPT_MADE_DATE_YEAR, 'yyyy-mm') AS APPT_MADE_MONTH_YEAR
 FROM(
         SELECT
@@ -352,9 +353,9 @@ GROUP BY
     b.NEW_PT2,
     b.NEW_PT3")
     
-    npr_index_summary <- glue("create INDEX npr_index_summary on AMBULATORY_ACCESS_NPR_SUMMARY_TABLE (APPT_MADE_DATE_YEAR, DEPARTMENT)")
+    npr_index_summary <- glue("create INDEX npr_index_summary_test on AMBULATORY_ACCESS_NPR_SUMMARY_TABLE_TEST (APPT_MADE_DATE_YEAR, DEPARTMENT)")
     
-    pop_table_dev <- glue("CREATE TABLE AMBULATORY_POPULATION AS 
+    pop_table_dev <- glue("CREATE TABLE AMBULATORY_POPULATION_TEST AS 
 SELECT g.*
 FROM(
 SELECT e.*,
@@ -389,25 +390,25 @@ FROM (VILLEA04.AMBULATORY_ACCESS_TEST) a
        ) e
        
        )g")
-    drop_pop_dev <- glue("DROP TABLE AMBULATORY_POPULATION")
-    index_pop_dev <- glue("create INDEX pop_dev_index on AMBULATORY_POPULATION (APPT_DATE_YEAR, DEPARTMENT)")
+    drop_pop_dev <- glue("DROP TABLE AMBULATORY_POPULATION_TEST")
+    index_pop_dev <- glue("create INDEX pop_dev_index_test on AMBULATORY_POPULATION_TEST (APPT_DATE_YEAR, DEPARTMENT)")
 
 
 ## Grouped Table execution
   tryCatch({
         poolcon_upt <- dbConnect(drv = odbc(), "OAO Cloud DB Staging", timeout = 30)
         dbBegin(poolcon_upt)
-            if(dbExistsTable(poolcon_upt, "AMBULATORY_ACCESS_SUMMARY_TABLE")){
+            if(dbExistsTable(poolcon_upt, "AMBULATORY_ACCESS_SUMMARY_TABLE_TEST")){
           dbExecute(poolcon_upt, access_summary_drop) 
             }
           dbExecute(poolcon_upt, access_summary_query) 
           dbExecute(poolcon_upt, access_summary_index)
-            if(dbExistsTable(poolcon_upt, "AMBULATORY_ACCESS_NPR_SUMMARY_TABLE")){
+            if(dbExistsTable(poolcon_upt, "AMBULATORY_ACCESS_NPR_SUMMARY_TABLE_TEST")){
           dbExecute(poolcon_upt, access_npr_summary_drop) 
             }
           dbExecute(poolcon_upt, access_npr_summary) 
           dbExecute(poolcon_upt, npr_index_summary)
-             if(dbExistsTable(poolcon_upt, "AMBULATORY_POPULATION")){
+             if(dbExistsTable(poolcon_upt, "AMBULATORY_POPULATION_TEST")){
           dbExecute(poolcon_upt, drop_pop_dev) 
             }
           dbExecute(poolcon_upt, pop_table_dev) 
