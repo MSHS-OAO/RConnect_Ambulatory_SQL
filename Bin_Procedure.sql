@@ -12,12 +12,10 @@ BEGIN
       EXECUTE IMMEDIATE sql_statement;
       
     sql_statement := 'update ' || table_name || ' set ' || bin_col || ' =  case ' ||
-    'when floor(' || column1 || ' / :bin_value) * :bin_value > :max_value then ''>'' || :max_value ' ||
+    'when floor(' || column1 || ' / :bin_value) * :bin_value >= :max_value then ''>'' || :max_value ' ||
     'when floor(' || column1 || ' / :bin_value) * :bin_value < :min_value then ''<'' || :min_value ' ||
     'else to_char(floor(' || column1 || ' / :bin_value) * :bin_value) ' ||
     'end'; 
-    
-    dbms_output.put_line(sql_statement);
     
     EXECUTE IMMEDIATE sql_statement 
     USING bin_value, bin_value, max_value, max_value, bin_value, bin_value, min_value, min_value, bin_value, bin_value;
