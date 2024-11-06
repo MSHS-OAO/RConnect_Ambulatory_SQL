@@ -39,7 +39,7 @@ FROM(
 
 ambulatory_mapping_index <- glue("CREATE index amb_mapping_index on AMBULATORY_MAPPING (CAMPUS, CAMPUS_SPECIALTY, DEPARTMENT, DEPARTMENT_ID)")
 
-#ambulatory_mapping_grant <- glue("GRANT SELECT on AMBULATORY_MAPPING to kweons01")
+ambulatory_mapping_grant <- glue("GRANT SELECT on AMBULATORY_MAPPING to kweons01")
 
 ###Provider mapping table
 ambulatory_provider_mapping <- glue("CREATE TABLE AMBULATORY_PROVIDER_MAPPING AS
@@ -120,7 +120,7 @@ FROM MV_DM_PATIENT_ACCESS a
                     ) e")
 access_index <- glue("CREATE INDEX access_index on AMBULATORY_ACCESS (APPT_DATE_YEAR, DEPARTMENT)")
 access_index_npr <- glue("create index npr_index on AMBULATORY_ACCESS (APPT_MADE_DATE_YEAR, DEPARTMENT)")
-#access_permission <- glue("GRANT SELECT ON AMBULATORY_ACCESS TO kweons01")
+access_permission <- glue("GRANT SELECT ON AMBULATORY_ACCESS TO kweons01")
 access_permission_dev <- glue("GRANT SELECT ON AMBULATORY_ACCESS TO OAO_DEVELOPMENT")
 access_permission_prod <- glue("GRANT SELECT ON AMBULATORY_ACCESS TO OAO_PRODUCTION")
 
@@ -228,7 +228,7 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
             }
         dbExecute(conn, ambulatory_mapping_query)
         dbExecute(conn, ambulatory_mapping_index)
-        #dbExecute(conn, ambulatory_mapping_grant)
+        dbExecute(conn, ambulatory_mapping_grant)
         
         if(dbExistsTable(conn, "AMBULATORY_PROVIDER_MAPPING")){
           dbExecute(conn, drop_ambulatory_provider_mapping) 
@@ -242,7 +242,7 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
         dbExecute(conn, access_query)
         dbExecute(conn, access_index)
         dbExecute(conn, access_index_npr)
-        #dbExecute(conn, access_permission)
+        dbExecute(conn, access_permission)
         dbExecute(conn, access_permission_dev)
         dbExecute(conn, access_permission_prod)
         dbExecute(conn, bin_roomin)
