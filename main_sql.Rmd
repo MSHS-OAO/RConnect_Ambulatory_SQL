@@ -264,11 +264,11 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
         #dbExecute(conn, slot_index)
 
         
-        if(dbExistsTable(conn, "AMBULATORY_POPULATION")){
-          dbExecute(conn, drop_population_query)
-        }
-        dbExecute(conn, population_query)
-        dbExecute(conn, population_grant)
+        #if(dbExistsTable(conn, "AMBULATORY_POPULATION")){
+        #  dbExecute(conn, drop_population_query)
+        #}
+        #dbExecute(conn, population_query)
+        #dbExecute(conn, population_grant)
         
         dbCommit(conn)
         dbDisconnect(conn)
