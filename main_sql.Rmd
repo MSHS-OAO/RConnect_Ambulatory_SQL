@@ -118,8 +118,8 @@ FROM MV_DM_PATIENT_ACCESS a
                     ) c
                     )d
                     ) e")
-access_index <- glue("CREATE INDEX access_index on AMBULATORY_ACCESS (APPT_DATE_YEAR, DEPARTMENT)")
-access_index_npr <- glue("create index npr_index on AMBULATORY_ACCESS (APPT_MADE_DATE_YEAR, DEPARTMENT)")
+access_index <- glue("CREATE INDEX access_index_testing on AMBULATORY_ACCESS (APPT_DATE_YEAR, DEPARTMENT)")
+access_index_npr <- glue("create index npr_index_testing on AMBULATORY_ACCESS (APPT_MADE_DATE_YEAR, DEPARTMENT)")
 access_permission <- glue("GRANT SELECT ON AMBULATORY_ACCESS TO kweons01")
 access_permission_dev <- glue("GRANT SELECT ON AMBULATORY_ACCESS TO OAO_DEVELOPMENT")
 access_permission_prod <- glue("GRANT SELECT ON AMBULATORY_ACCESS TO OAO_PRODUCTION")
@@ -221,7 +221,7 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
 
 ###Query Execution
   tryCatch({
-        conn <- dbConnect(drv = odbc(), "OAO Cloud DB", timeout = 30)
+        conn <- dbConnect(drv = odbc(), "OAO Cloud DB Staging", timeout = 30)
         dbBegin(conn)
             if(dbExistsTable(conn, "AMBULATORY_MAPPING")){
           dbExecute(conn, ambulatory_mapping_drop) 
@@ -395,37 +395,37 @@ FROM (VILLEA04.AMBULATORY_ACCESS) a
 
 
 ## Grouped Table execution
-  tryCatch({
-        poolcon_upt <- dbConnect(drv = odbc(), "OAO Cloud DB Staging", timeout = 30)
-        dbBegin(poolcon_upt)
-            if(dbExistsTable(poolcon_upt, "AMBULATORY_ACCESS_SUMMARY_TABLE")){
-          dbExecute(poolcon_upt, access_summary_drop) 
-            }
-          dbExecute(poolcon_upt, access_summary_query) 
-          dbExecute(poolcon_upt, access_summary_index)
-            if(dbExistsTable(poolcon_upt, "AMBULATORY_ACCESS_NPR_SUMMARY_TABLE")){
-          dbExecute(poolcon_upt, access_npr_summary_drop) 
-            }
-          dbExecute(poolcon_upt, access_npr_summary) 
-          dbExecute(poolcon_upt, npr_index_summary)
-             if(dbExistsTable(poolcon_upt, "AMBULATORY_POPULATION")){
-          dbExecute(poolcon_upt, drop_pop_dev) 
-            }
-          dbExecute(poolcon_upt, pop_table_dev) 
-          dbExecute(poolcon_upt, index_pop_dev)
-
-
-        
-        dbCommit(poolcon_upt)
-        dbDisconnect(poolcon_upt)
-        print("success")
-
-  },
-  error = function(err){
-    print("error staging")
-    dbRollback(poolcon_upt)
-    dbDisconnect(poolcon_upt)
-  })
+  # tryCatch({
+  #       poolcon_upt <- dbConnect(drv = odbc(), "OAO Cloud DB Staging", timeout = 30)
+  #       dbBegin(poolcon_upt)
+  #           if(dbExistsTable(poolcon_upt, "AMBULATORY_ACCESS_SUMMARY_TABLE")){
+  #         dbExecute(poolcon_upt, access_summary_drop) 
+  #           }
+  #         dbExecute(poolcon_upt, access_summary_query) 
+  #         dbExecute(poolcon_upt, access_summary_index)
+  #           if(dbExistsTable(poolcon_upt, "AMBULATORY_ACCESS_NPR_SUMMARY_TABLE")){
+  #         dbExecute(poolcon_upt, access_npr_summary_drop) 
+  #           }
+  #         dbExecute(poolcon_upt, access_npr_summary) 
+  #         dbExecute(poolcon_upt, npr_index_summary)
+  #            if(dbExistsTable(poolcon_upt, "AMBULATORY_POPULATION")){
+  #         dbExecute(poolcon_upt, drop_pop_dev) 
+  #           }
+  #         dbExecute(poolcon_upt, pop_table_dev) 
+  #         dbExecute(poolcon_upt, index_pop_dev)
+  # 
+  # 
+  #       
+  #       dbCommit(poolcon_upt)
+  #       dbDisconnect(poolcon_upt)
+  #       print("success")
+  # 
+  # },
+  # error = function(err){
+  #   print("error staging")
+  #   dbRollback(poolcon_upt)
+  #   dbDisconnect(poolcon_upt)
+  # })
 
 ```
 
