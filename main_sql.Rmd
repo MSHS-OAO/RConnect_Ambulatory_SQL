@@ -236,15 +236,15 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
         #  dbExecute(conn, ambulatory_provider_mapping)
 
         
-        if(dbExistsTable(conn, "AMBULATORY_ACCESS")){
-          dbExecute(conn, drop_access_query) 
-        }
-        dbExecute(conn, access_query)
-        dbExecute(conn, access_index)
-        dbExecute(conn, access_index_npr)
-        dbExecute(conn, access_permission)
-        # dbExecute(conn, access_permission_dev)
-        dbExecute(conn, access_permission_prod)
+        # if(dbExistsTable(conn, "AMBULATORY_ACCESS")){
+        #   dbExecute(conn, drop_access_query) 
+        # }
+        # dbExecute(conn, access_query)
+        # dbExecute(conn, access_index)
+        # dbExecute(conn, access_index_npr)
+        # dbExecute(conn, access_permission)
+        # # dbExecute(conn, access_permission_dev)
+        # dbExecute(conn, access_permission_prod)
         dbExecute(conn, bin_roomin)
         dbExecute(conn, bin_cycle)
         dbExecute(conn, bin_roomin_visit_end)
