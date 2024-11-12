@@ -347,7 +347,7 @@ GROUP BY
     
     npr_index_summary <- glue("create INDEX npr_index_summary on AMBULATORY_ACCESS_NPR_SUMMARY_TABLE (APPT_MADE_DATE_YEAR, DEPARTMENT)")
     
-    pop_table_dev <- glue("CREATE TABLE AMBULATORY_POPULATION AS 
+    pop_table_dev <- glue("CREATE TABLE AMBULATORY_POPULATION_SUMMARY_TABLE AS 
 SELECT g.*
 FROM(
 SELECT e.*,
@@ -400,7 +400,7 @@ FROM (AMBULATORY_ACCESS) a
             }
           dbExecute(poolcon_upt, access_npr_summary) 
           dbExecute(poolcon_upt, npr_index_summary)
-             if(dbExistsTable(poolcon_upt, "AMBULATORY_POPULATION")){
+             if(dbExistsTable(poolcon_upt, "AMBULATORY_POPULATION_SUMMARY_TABLE")){
           dbExecute(poolcon_upt, drop_pop_dev) 
             }
           dbExecute(poolcon_upt, pop_table_dev) 
