@@ -220,7 +220,7 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
 
 ###Query Execution
   tryCatch({
-        conn <- dbConnect(drv = odbc(), "OAO Cloud DB", timeout = 30)
+        conn <- dbConnect(drv = odbc(), "OAO Cloud DB Production", timeout = 30)
         dbBegin(conn)
             if(dbExistsTable(conn, "AMBULATORY_MAPPING")){
           dbExecute(conn, ambulatory_mapping_drop) 
@@ -295,7 +295,7 @@ SELECT
     NEW_PT2,
     NEW_PT3,
     COUNT(*) AS total_appts
-FROM (VILLEA04.AMBULATORY_ACCESS)
+FROM (AMBULATORY_ACCESS)
 GROUP BY
     CAMPUS,
     CAMPUS_SPECIALTY,
@@ -331,7 +331,7 @@ FROM(
             TO_CHAR(trunc(a.APPT_MADE_DTTM), 'DY') AS APPT_DAY,
             a.NEW_PT2,
             a.NEW_PT3
-        FROM (VILLEA04.AMBULATORY_ACCESS) a
+        FROM (AMBULATORY_ACCESS) a
     ) b
 GROUP BY
     b.CAMPUS,
@@ -377,7 +377,7 @@ SELECT b.*, c.ZIP_CODE_LAYER_A, c.ZIP_CODE_LAYER_B, c.ZIP_CODE_LAYER_C, d.CITY, 
 FROM(
 SELECT a.*,
  SUBSTR(a.ZIP_CODE, 1, 5) AS NEW_ZIP 
-FROM (VILLEA04.AMBULATORY_ACCESS) a 
+FROM (AMBULATORY_ACCESS) a 
     ) b
     LEFT JOIN ZIP_CODE_LAYER c ON b.NEW_ZIP = c.ZIP_CODE 
     LEFT JOIN ZIP_CITY_STATE d ON b.NEW_ZIP = d.ZIP 
@@ -390,7 +390,7 @@ FROM (VILLEA04.AMBULATORY_ACCESS) a
 
 ## Grouped Table execution
   tryCatch({
-        poolcon_upt <- dbConnect(drv = odbc(), "OAO Cloud DB Staging", timeout = 30)
+        poolcon_upt <- dbConnect(drv = odbc(), "OAO Cloud DB Production", timeout = 30)
         dbBegin(poolcon_upt)
             if(dbExistsTable(poolcon_upt, "AMBULATORY_ACCESS_SUMMARY_TABLE")){
           dbExecute(poolcon_upt, access_summary_drop) 
