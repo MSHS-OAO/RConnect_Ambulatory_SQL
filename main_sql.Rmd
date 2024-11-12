@@ -127,8 +127,7 @@ FROM MV_DM_PATIENT_ACCESS a
 access_index <- glue("CREATE INDEX access_index on AMBULATORY_ACCESS (APPT_DATE_YEAR, DEPARTMENT)")
 access_index_npr <- glue("create index npr_index on AMBULATORY_ACCESS (APPT_MADE_DATE_YEAR, DEPARTMENT)")
 access_permission <- glue("GRANT SELECT ON AMBULATORY_ACCESS TO kweons01")
-# access_permission_dev <- glue("GRANT SELECT ON AMBULATORY_ACCESS TO OAO_DEVELOPMENT")
-# access_permission_prod <- glue("GRANT SELECT ON AMBULATORY_ACCESS TO OAO_PRODUCTION")
+
 
 
 ###Table specifically for global filters
@@ -242,8 +241,7 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
         dbExecute(conn, access_index)
         dbExecute(conn, access_index_npr)
         dbExecute(conn, access_permission)
-        dbExecute(conn, access_permission_dev)
-        dbExecute(conn, access_permission_prod)
+
 
         
         if(dbExistsTable(conn, "AMBULATORY_FILTERS")){
