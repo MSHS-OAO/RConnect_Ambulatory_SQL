@@ -382,7 +382,7 @@ FROM (AMBULATORY_ACCESS) a
        ) e
        
        )g")
-    drop_pop_dev <- glue("DROP TABLE AMBULATORY_POPULATION")
+    drop_pop_dev <- glue("DROP TABLE AMBULATORY_POPULATION_SUMMARY_TABLE")
     index_pop_dev <- glue("create INDEX pop_dev_index on AMBULATORY_POPULATION_SUMMARY_TABLE (APPT_DATE_YEAR, DEPARTMENT)")
 
 
