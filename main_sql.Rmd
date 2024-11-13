@@ -423,3 +423,29 @@ FROM (AMBULATORY_ACCESS) a
 
 ```
 
+```{r}
+add_new_bin_column <- glue("ALTER TABle AMBULATORY_ACCESS add bin_checkin number(5,0)")
+
+update_access_table <- glue("UPDATE AMBULATORY_ACCESS set bin_checkin = least(greatest(floor(DTTMTOCHECKIN / 5)*5, -60), 60)")
+
+tryCatch({
+        poolcon_upt <- dbConnect(drv = odbc(), "OAO Cloud DB Production", timeout = 30)
+        time_1 <- Sys.time()
+        dbBegin(poolcon_upt)
+            dbExecute(poolcon_upt, add_new_bin_column) 
+            dbExecute(poolcon_upt, update_access_table) 
+        dbCommit(poolcon_upt)
+        dbDisconnect(poolcon_upt)
+        time_2 <- Sys.time()
+        
+        print(time_2-time_1)
+        print("success")
+
+  },
+  error = function(err){
+    print(err)
+    print("error staging")
+    dbRollback(poolcon_upt)
+    dbDisconnect(poolcon_upt)
+  })
+```
