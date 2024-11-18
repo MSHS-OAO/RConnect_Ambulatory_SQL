@@ -231,15 +231,18 @@ FROM AMBULATORY_ACCESS_TEST1 a
           dbExecute(conn, drop_ambulatory_provider_mapping)
          }
          dbExecute(conn, ambulatory_provider_mapping)
-
-
+         start_time <- Sys.Date()
+         
         if(dbExistsTable(conn, "AMBULATORY_ACCESS_TEST1")){
           dbExecute(conn, drop_access_query)
         }
         dbExecute(conn, access_query)
         dbExecute(conn, access_index)
         dbExecute(conn, access_index_npr)
-        dbExecute(conn, access_permission)
+        #dbExecute(conn, access_permission)
+        end_time <- Sys.Date()
+        print(end_time - start_time)
+        
 
 
 
