@@ -231,7 +231,7 @@ FROM AMBULATORY_ACCESS_TEST1 a
           dbExecute(conn, drop_ambulatory_provider_mapping)
          }
          dbExecute(conn, ambulatory_provider_mapping)
-         start_time <- Sys.Date()
+         start_time <- Sys.time()
          
         if(dbExistsTable(conn, "AMBULATORY_ACCESS_TEST1")){
           dbExecute(conn, drop_access_query)
@@ -240,7 +240,7 @@ FROM AMBULATORY_ACCESS_TEST1 a
         dbExecute(conn, access_index)
         dbExecute(conn, access_index_npr)
         #dbExecute(conn, access_permission)
-        end_time <- Sys.Date()
+        end_time <- Sys.time()
         print(end_time - start_time)
         
 
@@ -385,7 +385,7 @@ FROM (AMBULATORY_ACCESS_TEST1) a
        
        )g")
     drop_pop_dev <- glue("DROP TABLE AMBULATORY_POPULATION_SUMMARY_TABLE_TEST1")
-    index_pop_dev <- glue("create INDEX pop_dev_index on AMBULATORY_POPULATION_SUMMARY_TABLE_TEST1 (APPT_DATE_YEAR, DEPARTMENT)")
+    index_pop_dev <- glue("create INDEX pop_dev_index_test1 on AMBULATORY_POPULATION_SUMMARY_TABLE_TEST1 (APPT_DATE_YEAR, DEPARTMENT)")
 
 
 ## Grouped Table execution
