@@ -10,8 +10,8 @@ timeOptionsHr_filter <- c("07:00","08:00","09:00", "10:00","11:00","12:00","13:0
                           "20:00") ## Time Range by Hour Filter
 
 
-conn <- dbConnect(odbc(), "OAO Cloud DB")
-utilization_tbl <- tbl(conn, "utilization_table")
+conn <- dbConnect(odbc(), "OAO Cloud DB Production")
+utilization_tbl <- tbl(conn, "AMBULATORY_UTILIZATION_TABLE")
 
 ##SQL query that returns rows that are in scheduled but not in actual
 missing_actual_data_query <- glue("SELECT q1.*
@@ -279,7 +279,7 @@ missing_actual_data <- missing_actual_data %>% select(-SCHEDULE_TO_ACTUAL_CONVER
    
    
    
-   connection <- dbConnect(odbc(), "OAO Cloud DB")
+   connection <- dbConnect(odbc(), "OAO Cloud DB Production")
  
    split_queries_test <- list()
    for (i in 1:length(split_queries)) {
@@ -293,7 +293,7 @@ missing_actual_data <- missing_actual_data %>% select(-SCHEDULE_TO_ACTUAL_CONVER
    system.time(
      outputPar <- foreach(i = 1:length(split_queries_test), .packages = c("DBI", "odbc"))%dopar%{
        #Connecting to database through DBI
-       ch = dbConnect(odbc(), "OAO Cloud DB")
+       ch = dbConnect(odbc(), "OAO Cloud DB Production")
        #Test connection
        tryCatch({
          dbBegin(ch)
