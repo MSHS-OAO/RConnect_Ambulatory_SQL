@@ -19,7 +19,7 @@ library(doParallel)
 
 
 
-conn <- dbConnect(odbc(), "OAO Cloud DB")
+conn <- dbConnect(odbc(), "OAO Cloud DB Production")
 start_date <- Sys.Date()
 
 #for (j in 240:604) {
@@ -149,7 +149,7 @@ start_date <- Sys.Date()
   
   data.hour.arrived.non.na <- data.hour.arrived.non.na %>% filter(!(ROOMIN_DTTM == VISIT_END_DTTM))
 
-  # utilization_tbl <- tbl(conn, "utilization_table")
+  # utilization_tbl <- tbl(conn, "AMBULATORY_UTILIZATION_TABLE")
   #
   # median_roomtime_mapping <- utilization_tbl %>%
   #                            filter(UTIL_TYPE == 'actual') %>%
@@ -289,7 +289,7 @@ start_date <- Sys.Date()
 
 
 
-  TABLE_NAME <-  "utilization_table"
+  TABLE_NAME <-  "AMBULATORY_UTILIZATION_TABLE"
 
   # function to convert the record of data frame to into statement
   get_values <- function(x,table_name){
@@ -420,7 +420,7 @@ start_date <- Sys.Date()
   delete_query <- glue("DELETE FROM \"{TABLE_NAME}\" WHERE APPT_DTTM BETWEEN TO_DATE('{date_1} 00:00:00', 'YYYY-MM-DD HH24:MI:SS') AND
                                         TO_DATE('{date_2} 23:59:59', 'YYYY-MM-DD HH24:MI:SS')")
 
-  connection <- dbConnect(odbc(), "OAO Cloud DB")
+  connection <- dbConnect(odbc(), "OAO Cloud DB Production")
   tryCatch({
         dbBegin(connection)
         dbExecute(connection, delete_query)
@@ -446,7 +446,7 @@ start_date <- Sys.Date()
   system.time(
     outputPar <- foreach(i = 1:length(split_queries_test), .packages = c("DBI", "odbc"))%dopar%{
   #Connecting to database through DBI
-    ch = dbConnect(odbc(), "OAO Cloud DB")
+    ch = dbConnect(odbc(), "OAO Cloud DB Production")
   #Test connection
         tryCatch({
         dbBegin(ch)
