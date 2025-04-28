@@ -240,7 +240,7 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
         }
         dbExecute(conn, "ALTER SESSION FORCE PARALLEL QUERY")
         dbExecute(conn, access_query)
-        dbExecute(conn, "ALTER SESSION DISABLE PARALLEL DML|DDL|QUERY")
+        dbExecute(conn, "ALTER SESSION DISABLE PARALLEL QUERY")
         dbExecute(conn, access_index)
         dbExecute(conn, access_index_npr)
         dbExecute(conn, access_permission)
