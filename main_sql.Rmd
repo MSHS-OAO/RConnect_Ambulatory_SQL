@@ -52,7 +52,7 @@ drop_access_query <- glue("DROP TABLE AMBULATORY_ACCESS")
 
 
 ###Main Ambulatory Table
-access_query <- glue("CREATE TABLE AMBULATORY_ACCESS_test_test AS
+access_query <- glue("CREATE TABLE AMBULATORY_ACCESS AS
 SELECT d.*, CASE WHEN TO_CHAR(d.APPT_DTTM, 'HH24') >= 12 and TO_CHAR(d.APPT_DTTM, 'HH24') <= 17 THEN 'PM' 
      WHEN TO_CHAR(d.APPT_DTTM, 'HH24') < 12 Then 'AM'
      ELSE 'EVE' END AS AM_PM, nvl(d.NEW_PT3_RAW, 'ESTABLISHED') AS NEW_PT3, nvl(d.SCHEDULE_GROUPING, 'Other') AS SCHEDULE_GROUPING_MAPPED,
