@@ -52,21 +52,17 @@ drop_access_query <- glue("DROP TABLE AMBULATORY_ACCESS")
 
 
 ###Main Ambulatory Table
-access_query <- glue("CREATE TABLE AMBULATORY_ACCESS AS
-SELECT e.*, CASE WHEN TO_CHAR(APPT_DTTM, 'HH24') >= 12 and TO_CHAR(APPT_DTTM, 'HH24') <= 17 THEN 'PM' 
-     WHEN TO_CHAR(APPT_DTTM, 'HH24') < 12 Then 'AM'
-     ELSE 'EVE' END AS AM_PM, nvl(e.NEW_PT3_RAW, 'ESTABLISHED') AS NEW_PT3, nvl(e.SCHEDULE_GROUPING, 'Other') AS SCHEDULE_GROUPING_MAPPED,
-nvl(e.CAMPUS_NEW, 'NA') AS CAMPUS, nvl(e.CAMPUS_SPECIALTY_NEW, 'NA') AS CAMPUS_SPECIALTY,
-CASE e.ACCESS_CENTER WHEN 'Y' THEN 'Access Center' ELSE e.APPT_SOURCE_MAP_OTHER END AS Appt_Source_New,
-least(greatest(floor(DTTMTOCHECKIN / 5)*5, -65), 60) as bin_checkin,
-least(greatest(floor(CHECKINTOROOMIN / 30)*30, 0), 480) as bin_roomin, 
-least(greatest(floor(CYCLETIME / 30)*30, 0), 480) as bin_cycle,
-least(greatest(floor(ROOMINTOVISITEND / 30)*30, 0), 480) as bin_roomin_visit_end
-FROM(
-SELECT d.*, APPT_DATE_YEAR - DAYS_SUBTRACT AS APPT_WEEK, NVL(d.APPT_SOURCE_MAP, 'Other') AS APPT_SOURCE_MAP_OTHER,
-(d.min_of_checkout_visit - d.ROOMIN_DTTM)*24*60 AS ROOMINTOVISITEND,
- (d.CHECKIN_DTTM - d.APPT_DTTM)*60*24 as DTTMTOCHECKIN
-
+access_query <- glue("CREATE TABLE AMBULATORY_ACCESS_test_test AS
+SELECT d.*, CASE WHEN TO_CHAR(d.APPT_DTTM, 'HH24') >= 12 and TO_CHAR(d.APPT_DTTM, 'HH24') <= 17 THEN 'PM' 
+     WHEN TO_CHAR(d.APPT_DTTM, 'HH24') < 12 Then 'AM'
+     ELSE 'EVE' END AS AM_PM, nvl(d.NEW_PT3_RAW, 'ESTABLISHED') AS NEW_PT3, nvl(d.SCHEDULE_GROUPING, 'Other') AS SCHEDULE_GROUPING_MAPPED,
+nvl(d.CAMPUS_NEW, 'NA') AS CAMPUS, nvl(d.CAMPUS_SPECIALTY_NEW, 'NA') AS CAMPUS_SPECIALTY,
+CASE d.ACCESS_CENTER WHEN 'Y' THEN 'Access Center' ELSE d.APPT_SOURCE_MAP_OTHER END AS Appt_Source_New,
+least(greatest(floor(d.DTTMTOCHECKIN / 5)*5, -65), 60) as bin_checkin,
+least(greatest(floor(d.CHECKINTOROOMIN / 30)*30, 0), 480) as bin_roomin, 
+least(greatest(floor(d.CYCLETIME / 30)*30, 0), 480) as bin_cycle,
+least(greatest(floor(((d.min_of_checkout_visit - d.ROOMIN_DTTM)*24*60) / 30)*30, 0), 480) as bin_roomin_visit_end,
+(d.min_of_checkout_visit - d.ROOMIN_DTTM)*24*60 AS ROOMINTOVISITEND
 FROM(
 SELECT c.*,
 EXTRACT(year from c.APPT_DTTM) Appt_Year,
@@ -87,43 +83,44 @@ EXTRACT(year from c.APPT_DTTM) Appt_Year,
                        CONCAT('Q',TO_CHAR(c.APPT_MADE_DTTM, 'Q')) AS APPT_MADE_QUARTER,
                         EXTRACT(year from c.APPT_MADE_DTTM) AS Appt_MADE_Year,
                         TO_CHAR(c.APPT_MADE_DTTM, 'mm-dd') AS Appt_Made_Date,
-                        TO_CHAR(c.APPT_MADE_DTTM, 'MON') AS Appt_MAde_Month
+                        TO_CHAR(c.APPT_MADE_DTTM, 'MON') AS Appt_MAde_Month,
+                        (c.CHECKIN_DTTM - c.APPT_DTTM)*60*24 as DTTMTOCHECKIN,
+                        c.APPT_DATE_YEAR - c.DAYS_SUBTRACT AS APPT_WEEK, NVL(c.APPT_SOURCE_MAP, 'Other') AS APPT_SOURCE_MAP_OTHER
     FROM(
-     SELECT i.CAMPUS AS CAMPUS_NEW, i.CAMPUS_SPECIALTY AS CAMPUS_SPECIALTY_NEW, i.DEPARTMENT,d.*, b.holiday, f.DAYS_SUBTRACT, h.APPT_SOURCE_NEW AS APPT_SOURCE_MAP, j.SCHEDULE_GROUPING
+     SELECT i.CAMPUS AS CAMPUS_NEW, i.CAMPUS_SPECIALTY AS CAMPUS_SPECIALTY_NEW, i.DEPARTMENT,a.*, b.holiday, f.DAYS_SUBTRACT, h.APPT_SOURCE_NEW AS APPT_SOURCE_MAP, j.SCHEDULE_GROUPING
     FROM(
- SELECT a.PROV_NAME_WID, a.PROV_ID, a.DEPARTMENT_ID AS Department_ID, a.REFERRING_PROV_NAME_WID AS Refferring_Provider, a.CYCLE_TIME_MINUTES AS cycleTime,
-                             a.MRN, a.PAT_NAME AS Patient_Name, a.ZIP_CODE, a.BIRTH_DATE, a.FINCLASS AS Coverage,
-                             a.APPT_MADE_DTTM, a.APPT_DTTM, a.PRC_NAME AS APPT_TYPE, a.APPT_LENGTH AS APPT_DUR, a.DERIVED_STATUS_DESC AS APPT_STATUS,
-                             a.APPT_CANC_DTTM AS APPT_CANCEL_DTTM, a.CANCEL_REASON_NAME AS CANCEL_REASON,
-                             a.SIGNIN_DTTM, a.PAGED_DTTM, a.CHECKIN_DTTM, a.ARVL_LIST_REMOVE_DTTM AS ARRIVAL_REMOVE_DTTM,
-                             a.ROOMED_DTTM AS ROOMIN_DTTM, a.FIRST_ROOM_ASSIGN_DTTM AS ROOM_ASSIGNED_DTTM, 
-                             a.PHYS_ENTER_DTTM AS PROVIDERIN_DTTM, a.VISIT_END_DTTM, a.CHECKOUT_DTTM,
-                             a.TIME_IN_ROOM_MINUTES AS TIMEIN_ROOM, a.CYCLE_TIME_MINUTES AS CYCLE_TIME, a.LOS_NAME AS CLASS_PT, a.LOS_CODE,
-                             a.DEP_RPT_GRP_THIRTYONE AS CADENCE, a.APPT_ENTRY_USER_NAME_WID AS APPT_SOURCE, 
-                             a.ACCESS_CENTER_SCHEDULED_YN AS ACCESS_CENTER, a.VISIT_METHOD, a.VISIT_PROV_STAFF_RESOURCE_C,
-                             a.PRIMARY_DX_CODE, a.ENC_CLOSED_CHARGE_STATUS, a.Y_ENC_COSIGN_TIME, a.Y_ENC_CLOSE_TIME, a.Y_ENC_OPEN_TIME, a.NPI, a.VISIT_GROUP_NUM AS NEW_PT, 
-                             a.PAT_ENC_CSN_ID, a.VISITPLAN, a.ATTRIB_BILL_AREA,
-                             TRIM(LOWER(a.SCHED_METHOD)) AS SCHED_METHOD_TRIMMED,
-                             trunc(a.APPT_DTTM) AS Appt_Date_Year,
-                             TO_CHAR(a.APPT_DTTM, 'DY') AS APPT_DAY,
-                             TRIM(TRAILING FROM REGEXP_REPLACE(a.PROV_NAME_WID, '{reg_exp}', '')) AS Provider,
-                             CASE a.VISIT_PROV_STAFF_RESOURCE_C WHEN 1 THEN 'Provider' ELSE 'Resource' END AS Resources,
-                             trunc(a.APPT_MADE_DTTM) AS APPT_MADE_DATE_YEAR,
-                             a.OVERBOOKED_YN
-FROM MV_DM_PATIENT_ACCESS a
-        WHERE a.CONTACT_DATE BETWEEN TO_DATE('{date_1} 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
+ SELECT PROV_NAME_WID, PROV_ID, DEPARTMENT_ID AS Department_ID, REFERRING_PROV_NAME_WID AS Refferring_Provider, CYCLE_TIME_MINUTES AS cycleTime,
+                             MRN, PAT_NAME AS Patient_Name, ZIP_CODE, BIRTH_DATE, FINCLASS AS Coverage,
+                             APPT_MADE_DTTM, APPT_DTTM, PRC_NAME AS APPT_TYPE, APPT_LENGTH AS APPT_DUR, DERIVED_STATUS_DESC AS APPT_STATUS,
+                             APPT_CANC_DTTM AS APPT_CANCEL_DTTM, CANCEL_REASON_NAME AS CANCEL_REASON,
+                             SIGNIN_DTTM, PAGED_DTTM, CHECKIN_DTTM, ARVL_LIST_REMOVE_DTTM AS ARRIVAL_REMOVE_DTTM,
+                             ROOMED_DTTM AS ROOMIN_DTTM, FIRST_ROOM_ASSIGN_DTTM AS ROOM_ASSIGNED_DTTM, 
+                             PHYS_ENTER_DTTM AS PROVIDERIN_DTTM, VISIT_END_DTTM, CHECKOUT_DTTM,
+                             TIME_IN_ROOM_MINUTES AS TIMEIN_ROOM, CYCLE_TIME_MINUTES AS CYCLE_TIME, LOS_NAME AS CLASS_PT, LOS_CODE,
+                             DEP_RPT_GRP_THIRTYONE AS CADENCE, APPT_ENTRY_USER_NAME_WID AS APPT_SOURCE, 
+                             ACCESS_CENTER_SCHEDULED_YN AS ACCESS_CENTER, VISIT_METHOD, VISIT_PROV_STAFF_RESOURCE_C,
+                             PRIMARY_DX_CODE, ENC_CLOSED_CHARGE_STATUS, Y_ENC_COSIGN_TIME, Y_ENC_CLOSE_TIME, Y_ENC_OPEN_TIME, NPI, VISIT_GROUP_NUM AS NEW_PT, 
+                             PAT_ENC_CSN_ID, VISITPLAN, ATTRIB_BILL_AREA,
+                             TRIM(LOWER(SCHED_METHOD)) AS SCHED_METHOD_TRIMMED,
+                             trunc(APPT_DTTM) AS Appt_Date_Year,
+                             TO_CHAR(APPT_DTTM, 'DY') AS APPT_DAY,
+                             TRIM(TRAILING FROM REGEXP_REPLACE(PROV_NAME_WID, '{reg_exp}', '')) AS Provider,
+                             CASE VISIT_PROV_STAFF_RESOURCE_C WHEN 1 THEN 'Provider' ELSE 'Resource' END AS Resources,
+                             trunc(APPT_MADE_DTTM) AS APPT_MADE_DATE_YEAR,
+                             OVERBOOKED_YN
+FROM MV_DM_PATIENT_ACCESS 
+        WHERE CONTACT_DATE BETWEEN TO_DATE('{date_1} 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
                         AND TO_DATE('{date_2} 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
-                             OR a.APPT_MADE_DTTM BETWEEN TO_DATE('{date_1} 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
+                             OR APPT_MADE_DTTM BETWEEN TO_DATE('{date_1} 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
                         AND TO_DATE('{date_2} 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
-                    ) d
-                    LEFT JOIN holidays b on d.Appt_Date_Year = b.dates
-                    LEFT JOIN SUBTRACT_DAYS f on d.APPT_DAY = f.WEEKDAY
-                    LEFT JOIN AMBULATORY_APPT_SOURCE h on d.APPT_SOURCE = h.APPT_SOURCE
-                    LEFT JOIN AMBULATORY_MAPPING i on d.DEPARTMENT_ID = i.DEPARTMENT_ID
-                    LEFT JOIN AMBULATORY_SCHED_METHOD j on d.SCHED_METHOD_TRIMMED = LOWER(j.SCHED_METHOD)
+                    ) a
+                    LEFT JOIN holidays b on a.Appt_Date_Year = b.dates
+                    LEFT JOIN SUBTRACT_DAYS f on a.APPT_DAY = f.WEEKDAY
+                    LEFT JOIN AMBULATORY_APPT_SOURCE h on a.APPT_SOURCE = h.APPT_SOURCE
+                    LEFT JOIN AMBULATORY_MAPPING i on a.DEPARTMENT_ID = i.DEPARTMENT_ID
+                    LEFT JOIN AMBULATORY_SCHED_METHOD j on a.SCHED_METHOD_TRIMMED = LOWER(j.SCHED_METHOD)
                     ) c
-                    )d
-                    ) e")
+                    ) d")
 
 access_index <- glue("CREATE INDEX access_index on AMBULATORY_ACCESS (APPT_DATE_YEAR, DEPARTMENT)")
 access_index_npr <- glue("create index npr_index on AMBULATORY_ACCESS (APPT_MADE_DATE_YEAR, DEPARTMENT)")
