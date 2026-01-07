@@ -172,9 +172,9 @@ start_date <- Sys.Date()
   #
   # data.hour.arrived.na <- data.hour.arrived.na %>% mutate(SCHEDULE_TO_ACTUAL_CONVERSION = as.character(SCHEDULE_TO_ACTUAL_CONVERSION))
   #
-  # data.hour.arrived <- rbind(data.hour.arrived.na, data.hour.arrived.non.na) %>% select(-CHECKIN_DTTM)
+  data.hour.arrived <- rbind(data.hour.arrived.na, data.hour.arrived.non.na) %>% select(-CHECKIN_DTTM)
 
-  data.hour.arrived <- data.hour.arrived.non.na  %>% select(-CHECKIN_DTTM)
+  # data.hour.arrived <- data.hour.arrived.non.na  %>% select(-CHECKIN_DTTM)
 
   ########### Analysis of % of visits with actual visit start and end times ############
   data.hour.arrived  <- data.hour.arrived  %>% mutate(Appt.Start = floor_date(ROOMIN_DTTM, unit = "mins"),
