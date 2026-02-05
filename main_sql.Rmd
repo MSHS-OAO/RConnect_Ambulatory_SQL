@@ -221,7 +221,7 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
 
 ###Query Execution
   tryCatch({
-        conn <- dbConnect(drv = odbc(), "OAO Cloud DB", timeout = 30)
+        conn <- dbConnect(drv = odbc(), "OAO Cloud DB Production Oracle", timeout = 30)
         dbBegin(conn)
             if(dbExistsTable(conn, "AMBULATORY_MAPPING")){
           dbExecute(conn, ambulatory_mapping_drop) 
@@ -396,7 +396,7 @@ FROM (AMBULATORY_ACCESS) a
 
 ## Grouped Table execution
   tryCatch({
-        poolcon_upt <- dbConnect(drv = odbc(), "OAO Cloud DB Staging", timeout = 30)
+        poolcon_upt <- dbConnect(drv = odbc(), "OAO Cloud DB Production Oracle", timeout = 30)
         dbBegin(poolcon_upt)
             if(dbExistsTable(poolcon_upt, "AMBULATORY_ACCESS_SUMMARY_TABLE")){
           dbExecute(poolcon_upt, access_summary_drop) 
