@@ -232,7 +232,7 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
          dbExecute(conn, ambulatory_provider_mapping)
          start_time <- Sys.time()
          
-        if(dbExistsTable(conn, "AMBULATORY_ACCESS")){
+        if(dbExistsTable(conn, DBI::Id(schema = "OAO_PRODUCTION", table = "AMBULATORY_ACCESS"))){
           dbExecute(conn, drop_access_query)
         }
         #dbExecute(conn, "ALTER SESSION FORCE PARALLEL QUERY")
