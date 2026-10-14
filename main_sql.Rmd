@@ -48,8 +48,7 @@ WHERE CONTACT_DATE BETWEEN TO_DATE('2021-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS
             
 drop_ambulatory_provider_mapping <- glue("DROP TABLE AMBULATORY_PROVIDER_MAPPING")
 
-drop_access_query <- glue("DROP TABLE AMBULATORY_ACCESS")
-
+drop_access_query <- "DROP TABLE OAO_PRODUCTION.AMBULATORY_ACCESS"
 
 ###Main Ambulatory Table
 access_query <- glue("CREATE TABLE AMBULATORY_ACCESS AS
@@ -232,9 +231,20 @@ population_grant <- glue("GRANT SELECT ON AMBULATORY_POPULATION to KWEONS01")
          dbExecute(conn, ambulatory_provider_mapping)
          start_time <- Sys.time()
          
-        if(dbExistsTable(conn, DBI::Id(schema = "OAO_PRODUCTION", table = "AMBULATORY_ACCESS"))){
-          dbExecute(conn, drop_access_query)
-        }
+         
+        if (dbExistsTable(conn,DBI::Id(schema = "OAO_PRODUCTION", table = "AMBULATORY_ACCESS"))) {
+          tryCatch(
+            dbExecute(conn, drop_access_query),
+            error = function(e) {
+              if (grepl("ORA-00942", conditionMessage(e), fixed = TRUE)) {
+                message("AMBULATORY_ACCESS was not found; skipping DROP.")
+                } else {
+                  stop(e)
+                }
+              }
+          )
+          }
+         
         #dbExecute(conn, "ALTER SESSION FORCE PARALLEL QUERY")
         dbExecute(conn, access_query)
         #dbExecute(conn, "ALTER SESSION DISABLE PARALLEL QUERY")
